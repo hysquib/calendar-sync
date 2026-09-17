@@ -23,6 +23,7 @@ class BrowserManager {
 
     const launchOptions = {
       headless: 'new',
+      ignoreHTTPSErrors: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -32,6 +33,10 @@ class BrowserManager {
         '--no-zygote',
         '--window-size=1280,800',
         '--lang=zh-CN',
+        '--ignore-certificate-errors',
+        '--ignore-certificate-errors-spki-list',
+        '--allow-running-insecure-content',
+        '--disable-web-security',
       ],
       defaultViewport: {
         width: 1280,
@@ -82,6 +87,10 @@ class BrowserManager {
 
     const page = await this.browser.newPage();
     
+    // 设置页面级别忽略 HTTPS 错误
+    const client = await page.target().createCDPSession();
+    await client.send('Security.setIgnoreCertificateErrors', { ignore: true });
+    
     // 设置 User-Agent
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -103,7 +112,11 @@ class BrowserManager {
 
     if (url && url !== 'about:blank') {
       try {
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.goto(url, { 
+          waitUntil: 'domcontentloaded', 
+          timeout: 60000,
+          referer: undefined,
+        });
       } catch (error) {
         logger.warn('页面加载失败', { url, error: error.message });
       }
@@ -153,7 +166,10 @@ class BrowserManager {
     if (!page) throw new Error('页面不存在');
 
     try {
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+      await page.goto(url, { 
+        waitUntil: 'domcontentloaded', 
+        timeout: 60000 
+      });
       return { success: true, url: page.url() };
     } catch (error) {
       logger.warn('导航失败', { pageId, url, error: error.message });

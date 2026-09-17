@@ -3,8 +3,21 @@ const cheerio = require('cheerio');
 const dayjs = require('dayjs');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 const logger = require('../utils/logger');
 const { getConfigManager } = require('../utils/configManager');
+
+// 创建忽略 HTTPS 证书错误的 axios 实例
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
+
+const axiosInstance = axios.create({
+  httpsAgent,
+  timeout: 30000,
+  maxRedirects: 5,
+  validateStatus: () => true,
+});
 
 /**
  * 教务系统服务（青果 KINGOSOFT）
@@ -95,7 +108,7 @@ class JWXTService {
       const cookieStr = this.cookies.map(c => `${c.name}=${c.value}`).join('; ');
       
       // 尝试访问需要登录的页面
-      const response = await axios.get(`${this.baseUrl}/frame/homepage`, {
+      const response = await axiosInstance.get(`${this.baseUrl}/frame/homepage`, {
         headers: {
           'Cookie': cookieStr,
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -150,7 +163,7 @@ class JWXTService {
       
       // 青果教务系统课表地址（可能因学校而异，这里用常见路径）
       // 先尝试获取学生课表页面
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `${this.baseUrl}/student/course/grkb11.jsp`,
         {
           headers: {

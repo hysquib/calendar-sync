@@ -129,7 +129,7 @@ async function handleWSMessage(ws, message, currentPageId) {
       const pageId = message.pageId || ws.pageId;
       const page = browserManager.getPage(pageId);
       if (page) {
-        await page.reload({ waitUntil: 'networkidle2' });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
       }
       await sendScreenshot(ws, pageId);
       break;
