@@ -8,6 +8,7 @@ const { getSyncManager } = require('./sync/sync');
 const { authMiddleware, pageAuthMiddleware } = require('./utils/auth');
 const adminRoutes = require('./routes/admin');
 const { router: browserRoutes, initWebSocket } = require('./routes/browser');
+const jwxtImportRoutes = require('./routes/jwxt-import');
 
 const app = express();
 const server = http.createServer(app);
@@ -82,6 +83,9 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
 app.use('/api', authMiddleware, adminRoutes);
 app.use('/api/browser', authMiddleware, browserRoutes);
 app.use('/api/jwxt', authMiddleware, browserRoutes);
+
+// 教务系统课表导入（跨域，内部验证 token）
+app.use('/api/jwxt-import', jwxtImportRoutes);
 
 // 管理后台页面（需要认证）
 const publicDir = path.join(__dirname, '..', 'public');

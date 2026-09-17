@@ -49,897 +49,565 @@
     }
     .nav-item:hover {
       background: #f5f7fa;
-      color: #1890ff;
+      color: #667eea;
     }
     .nav-item.active {
-      background: #e6f7ff;
-      color: #1890ff;
-      border-right: 3px solid #1890ff;
+      background: #f0f2ff;
+      color: #667eea;
+      font-weight: 500;
+      border-left: 3px solid #667eea;
     }
-    .nav-item .icon { margin-right: 10px; font-size: 16px; }
-    .sidebar-footer {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      font-size: 12px;
-      color: #bbb;
-    }
+    .nav-icon { font-size: 18px; margin-right: 10px; }
 
     /* 主内容区 */
     .main {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      padding: 30px;
+      overflow-y: auto;
+      max-width: 900px;
+    }
+    .page-header {
+      margin-bottom: 24px;
+    }
+    .page-header h2 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .page-header p {
+      font-size: 14px;
+      color: #999;
     }
 
-    /* 顶部栏 */
-    .topbar {
-      height: 56px;
+    /* 步骤卡片 */
+    .step-card {
       background: #fff;
-      border-bottom: 1px solid #e8e8e8;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      flex-shrink: 0;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    .topbar h2 {
-      font-size: 16px;
-      font-weight: 500;
-    }
-    .topbar-actions {
+    .step-header {
       display: flex;
       align-items: center;
       gap: 12px;
+      margin-bottom: 16px;
     }
-    .logout-btn {
-      background: none;
-      border: 1px solid #ddd;
-      padding: 6px 14px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-      color: #666;
-    }
-    .logout-btn:hover {
-      border-color: #ff4d4f;
-      color: #ff4d4f;
-    }
-
-    /* 内容区 */
-    .content {
-      flex: 1;
-      padding: 20px;
-      overflow: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    /* 状态卡片 */
-    .status-card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .status-info {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .status-badge {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #ccc;
-    }
-    .status-badge.online { background: #52c41a; box-shadow: 0 0 8px #52c41a; }
-    .status-badge.offline { background: #ff4d4f; }
-    .status-badge.loading { background: #faad14; animation: pulse 1s infinite; }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-    .status-text {
-      font-size: 14px;
-      color: #333;
-    }
-    .status-sub {
-      font-size: 12px;
-      color: #999;
-      margin-top: 2px;
-    }
-    .btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      transition: all 0.2s;
-    }
-    .btn-primary {
-      background: #1890ff;
-      color: #fff;
-    }
-    .btn-primary:hover { background: #40a9ff; }
-    .btn-success {
-      background: #52c41a;
-      color: #fff;
-    }
-    .btn-success:hover { background: #73d13d; }
-    .btn-default {
-      background: #fff;
-      border: 1px solid #d9d9d9;
-      color: #555;
-    }
-    .btn-default:hover {
-      border-color: #1890ff;
-      color: #1890ff;
-    }
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* 浏览器容器 */
-    .browser-container {
-      flex: 1;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-height: 500px;
-    }
-    .browser-toolbar {
-      background: #fafafa;
-      border-bottom: 1px solid #e8e8e8;
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .browser-nav-btn {
+    .step-number {
       width: 32px;
       height: 32px;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
-      background: #fff;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      color: #666;
-      transition: all 0.2s;
-    }
-    .browser-nav-btn:hover {
-      border-color: #1890ff;
-      color: #1890ff;
-    }
-    .browser-nav-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-    .browser-address-bar {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
-      padding: 0 12px;
-      height: 32px;
-    }
-    .browser-address-bar input {
-      flex: 1;
-      border: none;
-      outline: none;
-      font-size: 13px;
-      color: #333;
-      background: transparent;
-    }
-    .browser-address-bar .lock-icon {
-      margin-right: 8px;
-      font-size: 12px;
-      color: #999;
-    }
-    .browser-go-btn {
-      margin-left: 10px;
-      padding: 0 14px;
-      height: 32px;
-      background: #1890ff;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    .browser-go-btn:hover { background: #40a9ff; }
-
-    .browser-viewport {
-      flex: 1;
-      position: relative;
-      overflow: auto;
-      background: #f0f2f5;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-    }
-    .browser-viewport img {
-      max-width: 100%;
-      cursor: crosshair;
-      display: block;
-    }
-    .browser-viewport .loading-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(255,255,255,0.8);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      z-index: 10;
-    }
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #e8e8e8;
-      border-top-color: #1890ff;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .empty-state {
-      flex: 1;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
-      color: #999;
-      padding: 60px 20px;
-    }
-    .empty-state .icon {
-      font-size: 48px;
-    }
-    .empty-state h3 {
       font-size: 16px;
-      color: #666;
-      font-weight: 500;
+      font-weight: 600;
+      flex-shrink: 0;
     }
-    .empty-state p {
-      font-size: 13px;
-      text-align: center;
-      max-width: 400px;
-      line-height: 1.6;
+    .step-title {
+      font-size: 16px;
+      font-weight: 600;
     }
-
-    /* 输入提示 */
-    .input-toolbar {
-      background: #fafafa;
-      border-top: 1px solid #e8e8e8;
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .input-toolbar label {
-      font-size: 13px;
-      color: #666;
-      white-space: nowrap;
-    }
-    .input-toolbar input[type="text"] {
-      flex: 1;
-      padding: 6px 12px;
-      border: 1px solid #d9d9d9;
-      border-radius: 4px;
-      font-size: 13px;
-      outline: none;
-    }
-    .input-toolbar input[type="text"]:focus {
-      border-color: #1890ff;
-    }
-    .key-hint {
-      font-size: 12px;
-      color: #bbb;
+    .step-body {
+      margin-left: 44px;
     }
 
-    /* 提示消息 */
-    .toast {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 12px 20px;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 14px;
-      z-index: 1000;
-      opacity: 0;
-      transform: translateY(-10px);
-      transition: all 0.3s;
-    }
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .toast.success { background: #52c41a; }
-    .toast.error { background: #ff4d4f; }
-    .toast.info { background: #1890ff; }
-    .toast.warning { background: #faad14; }
-
-    /* 配置表单 */
-    .config-section {
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .config-section h3 {
-      font-size: 15px;
-      margin-bottom: 16px;
-      color: #333;
-    }
-    .form-row {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
+    /* 表单 */
     .form-group {
-      flex: 1;
+      margin-bottom: 16px;
     }
     .form-group label {
       display: block;
       font-size: 13px;
       color: #555;
       margin-bottom: 6px;
+      font-weight: 500;
     }
     .form-group input {
       width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #d9d9d9;
+      padding: 10px 14px;
+      border: 1px solid #e0e0e0;
       border-radius: 6px;
-      font-size: 13px;
-      outline: none;
+      font-size: 14px;
       transition: border-color 0.2s;
     }
     .form-group input:focus {
-      border-color: #1890ff;
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
     .form-tip {
       font-size: 12px;
       color: #999;
       margin-top: 4px;
     }
+
+    /* 按钮 */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #555;
+    }
+    .btn-secondary:hover { background: #e8e8e8; }
+    .btn-success { background: #52c41a; color: white; }
+    .btn-success:hover { background: #3fae0d; }
+
+    /* 代码框 */
+    .code-box {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 300px;
+      overflow-y: auto;
+      position: relative;
+    }
+    .code-box .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .code-box .copy-btn:hover { opacity: 0.8; }
+
+    /* 状态提示 */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .alert-info {
+      background: #e6f7ff;
+      border: 1px solid #91d5ff;
+      color: #096dd9;
+    }
+    .alert-warning {
+      background: #fffbe6;
+      border: 1px solid #ffe58f;
+      color: #d48806;
+    }
+    .alert-success {
+      background: #f6ffed;
+      border: 1px solid #b7eb8f;
+      color: #389e0d;
+    }
+    .alert-error {
+      background: #fff2f0;
+      border: 1px solid #ffccc7;
+      color: #cf1322;
+    }
+
+    /* 导入结果 */
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    .result-table th, .result-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    .result-table th {
+      background: #f5f7fa;
+      font-weight: 600;
+    }
+
+    /* 登录状态 */
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .status-badge.online { background: #f6ffed; color: #52c41a; }
+    .status-badge.offline { background: #f5f5f5; color: #999; }
   </style>
 </head>
 <body>
   <!-- 侧边栏 -->
   <div class="sidebar">
     <div class="sidebar-header">
-      <h1>📅 日历同步</h1>
-      <p>多平台日历同步管理</p>
+      <h1>日历同步</h1>
+      <p>管理后台</p>
     </div>
-    <a href="/" class="nav-item"><span class="icon">📊</span> 仪表盘</a>
-    <a href="/jwxt.html" class="nav-item active"><span class="icon">🎓</span> 教务系统</a>
-    <a href="/custom.html" class="nav-item"><span class="icon">📝</span> 自定义事件</a>
-    <a href="/#config" class="nav-item"><span class="icon">⚙️</span> 同步配置</a>
-    <a href="/#logs" class="nav-item"><span class="icon">📋</span> 同步日志</a>
-    <div class="sidebar-footer">v2.0.0</div>
+    <a href="/" class="nav-item">
+      <span class="nav-icon">📊</span>
+      <span>仪表盘</span>
+    </a>
+    <a href="/jwxt.html" class="nav-item active">
+      <span class="nav-icon">🎓</span>
+      <span>教务系统</span>
+    </a>
+    <a href="/custom.html" class="nav-item">
+      <span class="nav-icon">📋</span>
+      <span>自定义事件</span>
+    </a>
+    <a href="/" class="nav-item">
+      <span class="nav-icon">⚙️</span>
+      <span>同步配置</span>
+    </a>
   </div>
 
   <!-- 主内容 -->
   <div class="main">
-    <div class="topbar">
+    <div class="page-header">
       <h2>🎓 教务系统课表导入</h2>
-      <div class="topbar-actions">
-        <span id="loginStatus" style="font-size:13px;color:#999;">检查中...</span>
-        <button class="logout-btn" onclick="logout()">退出登录</button>
+      <p>通过本地浏览器登录教务系统，抓取课表并同步到日历</p>
+    </div>
+
+    <!-- 登录状态 -->
+    <div id="loginStatus" class="alert alert-info">
+      正在检查教务系统登录状态...
+    </div>
+
+    <!-- 步骤 1：配置教务系统信息 -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div class="step-title">填写教务系统信息</div>
+      </div>
+      <div class="step-body">
+        <div class="form-group">
+          <label>教务系统地址</label>
+          <input type="text" id="baseUrlInput" placeholder="https://jw.hebust.edu.cn/hbkjjw" value="">
+          <div class="form-tip">填写你们学校教务系统的根地址（不含 /cas/login.action 部分）</div>
+        </div>
+        <div class="form-group">
+          <label>学号</label>
+          <input type="text" id="usernameInput" placeholder="请输入学号" value="">
+          <div class="form-tip">用于标识课表归属，同步时需要</div>
+        </div>
       </div>
     </div>
 
-    <div class="content">
-      <!-- 状态卡片 -->
-      <div class="status-card">
-        <div class="status-info">
-          <div id="statusBadge" class="status-badge"></div>
-          <div>
-            <div id="statusText" class="status-text">正在检查登录状态...</div>
-            <div id="statusSub" class="status-sub"></div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;">
-          <button class="btn btn-default" onclick="refreshStatus()">🔄 刷新状态</button>
-          <button id="saveLoginBtn" class="btn btn-success" onclick="saveLogin()" style="display:none;">
-            ✓ 保存登录状态
-          </button>
-        </div>
+    <!-- 步骤 2：打开教务系统 -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div class="step-title">在本地浏览器打开教务系统并登录</div>
       </div>
-
-      <!-- 配置区（未启动浏览器时显示） -->
-      <div id="configSection" class="config-section">
-        <h3>🚀 启动浏览器</h3>
-        <div class="form-row">
-          <div class="form-group" style="flex:2;">
-            <label>教务系统地址</label>
-            <input type="text" id="baseUrlInput" placeholder="https://jw.hebust.edu.cn/hbkjjw/" 
-              value="https://jw.hebust.edu.cn/hbkjjw/">
-            <div class="form-tip">输入你们学校教务系统的登录页地址</div>
-          </div>
-          <div class="form-group">
-            <label>学号/用户名</label>
-            <input type="text" id="usernameInput" placeholder="你的学号">
-            <div class="form-tip">用于标识保存的登录状态</div>
-          </div>
-        </div>
-        <button class="btn btn-primary" onclick="startBrowser()">🌐 启动浏览器并打开教务系统</button>
+      <div class="step-body">
+        <p style="margin-bottom: 12px; color: #666; font-size: 13px;">
+          点击下方按钮，会在新标签页打开教务系统登录页。<br>
+          请在<strong>连接校园网的电脑或手机</strong>上操作，登录后进入课表页面。
+        </p>
+        <button class="btn btn-primary" onclick="openJwxt()">
+          🌐 打开教务系统
+        </button>
+        <p style="margin-top: 12px; color: #999; font-size: 12px;">
+          提示：登录后请导航到<strong>课表页面</strong>（个人课表/周课表），然后再进行下一步
+        </p>
       </div>
+    </div>
 
-      <!-- 浏览器容器 -->
-      <div id="browserContainer" class="browser-container" style="display:none;">
-        <!-- 工具栏 -->
-        <div class="browser-toolbar">
-          <button class="browser-nav-btn" onclick="goBack()" title="后退">←</button>
-          <button class="browser-nav-btn" onclick="goForward()" title="前进">→</button>
-          <button class="browser-nav-btn" onclick="refreshPage()" title="刷新">⟳</button>
-          <div class="browser-address-bar">
-            <span class="lock-icon">🔒</span>
-            <input type="text" id="addressInput" placeholder="输入网址..." onkeydown="if(event.key==='Enter')goNavigate()">
-          </div>
-          <button class="browser-go-btn" onclick="goNavigate()">前往</button>
-          <button class="browser-nav-btn" onclick="closeBrowser()" title="关闭浏览器" style="color:#ff4d4f;border-color:#ffccc7;">
-            ✕
-          </button>
+    <!-- 步骤 3：获取抓取代码 -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div class="step-title">复制下方代码，粘贴到教务系统页面的控制台</div>
+      </div>
+      <div class="step-body">
+        <p style="margin-bottom: 12px; color: #666; font-size: 13px;">
+          在教务系统课表页面按 <kbd>F12</kbd> 打开开发者工具，切换到 <strong>Console（控制台）</strong> 标签页，
+          粘贴下面的代码并按 <strong>Enter</strong> 执行。
+        </p>
+        <div class="code-box">
+          <button class="copy-btn" onclick="copySnippet()">复制代码</button>
+          <pre id="snippetCode">请先在步骤 1 填写信息，代码会自动生成...</pre>
         </div>
+        <p style="margin-top: 12px; color: #999; font-size: 12px;">
+          代码会自动抓取当前页面的课表数据和登录状态，发送回服务器处理。
+        </p>
+      </div>
+    </div>
 
-        <!-- 视口 -->
-        <div class="browser-viewport" id="browserViewport">
-          <img id="screenshotImg" alt="浏览器截图" onclick="handleClick(event)">
-          <div id="loadingOverlay" class="loading-overlay" style="display:none;">
-            <div class="spinner"></div>
-            <div>加载中...</div>
-          </div>
+    <!-- 步骤 4：手动粘贴（备选方案） -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-number">4</div>
+        <div class="step-title">备选方案：手动粘贴课表页面 HTML</div>
+      </div>
+      <div class="step-body">
+        <p style="margin-bottom: 12px; color: #666; font-size: 13px;">
+          如果控制台代码执行失败（如浏览器安全限制），可以在课表页面按 <kbd>F12</kbd>，
+          在 Console 输入 <code>document.documentElement.outerHTML</code>，
+          复制输出结果粘贴到下方：
+        </p>
+        <div class="form-group">
+          <label>课表页面 HTML</label>
+          <textarea id="htmlInput" rows="5" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:6px;font-family:monospace;font-size:12px;" placeholder="粘贴 document.documentElement.outerHTML 的输出结果..."></textarea>
         </div>
+        <button class="btn btn-secondary" onclick="manualImport()">
+          📥 手动导入
+        </button>
+      </div>
+    </div>
 
-        <!-- 输入工具栏 -->
-        <div class="input-toolbar">
-          <label>💬 输入文字：</label>
-          <input type="text" id="textInput" placeholder="点击页面上的输入框，然后在这里输入文字..." onkeydown="handleTextInput(event)">
-          <button class="btn btn-default" onclick="sendText()" style="padding:6px 14px;">发送</button>
-          <button class="btn btn-default" onclick="pressEnter()" style="padding:6px 14px;">Enter</button>
-          <button class="btn btn-default" onclick="pressTab()" style="padding:6px 14px;">Tab</button>
-          <button class="btn btn-default" onclick="pressBackspace()" style="padding:6px 14px;">⌫</button>
-          <span class="key-hint">提示：先点击截图上的输入框聚焦，再在这里输入文字</span>
+    <!-- 导入结果 -->
+    <div id="importResult" style="display:none">
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-number" style="background:linear-gradient(135deg,#52c41a,#389e0d)">✓</div>
+          <div class="step-title">导入结果</div>
+        </div>
+        <div class="step-body" id="importResultBody">
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Toast 提示 -->
-  <div id="toast" class="toast"></div>
-
   <script>
-    let ws = null;
-    let pageId = null;
-    let isConnecting = false;
-    let screenshotScale = 1;
+    // ========== 初始化 ==========
 
-    // 页面加载
-    document.addEventListener('DOMContentLoaded', () => {
-      checkLoginStatus();
-      loadSavedConfig();
-    });
-
-    // 加载保存的配置
-    function loadSavedConfig() {
-      fetch('/api/config')
-        .then(res => res.json())
-        .then(data => {
-          if (data.config?.jwxt) {
-            if (data.config.jwxt.baseUrl) {
-              document.getElementById('baseUrlInput').value = data.config.jwxt.baseUrl;
-            }
-            if (data.config.jwxt.username) {
-              document.getElementById('usernameInput').value = data.config.jwxt.username;
-            }
-          }
-        })
-        .catch(() => {});
+    // 获取当前认证 token
+    function getToken() {
+      const match = document.cookie.match(/auth_token=([^;]+)/);
+      return match ? match[1] : '';
     }
 
-    // 检查登录状态
-    function checkLoginStatus() {
-      const badge = document.getElementById('statusBadge');
-      const text = document.getElementById('statusText');
-      const sub = document.getElementById('statusSub');
-      
-      badge.className = 'status-badge loading';
-      text.textContent = '正在检查登录状态...';
-      sub.textContent = '';
-
-      fetch('/api/jwxt/status')
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            if (data.loggedIn) {
-              badge.className = 'status-badge online';
-              text.textContent = '✓ 已登录教务系统';
-              sub.textContent = `地址：${data.baseUrl || ''} | 用户：${data.username || ''}`;
-            } else if (data.enabled) {
-              badge.className = 'status-badge offline';
-              text.textContent = '✗ 登录已过期';
-              sub.textContent = '请重新登录教务系统';
-            } else {
-              badge.className = 'status-badge offline';
-              text.textContent = '未配置教务系统';
-              sub.textContent = '请先配置教务系统地址';
-            }
-          } else {
-            badge.className = 'status-badge offline';
-            text.textContent = '检查失败';
-            sub.textContent = data.error || '未知错误';
-          }
-        })
-        .catch(err => {
-          badge.className = 'status-badge offline';
-          text.textContent = '检查失败';
-          sub.textContent = err.message;
-        });
+    // 获取服务器地址
+    function getServerUrl() {
+      return window.location.origin;
     }
 
-    function refreshStatus() {
-      checkLoginStatus();
-    }
-
-    // 启动浏览器
-    function startBrowser() {
+    // 生成抓取代码
+    function generateSnippet() {
       const baseUrl = document.getElementById('baseUrlInput').value.trim();
       const username = document.getElementById('usernameInput').value.trim();
+      const token = getToken();
+      const serverUrl = getServerUrl();
 
+      if (!baseUrl || !username) {
+        document.getElementById('snippetCode').textContent = '请先在步骤 1 填写教务系统地址和学号';
+        return;
+      }
+
+      if (!token) {
+        document.getElementById('snippetCode').textContent = '认证失败，请重新登录管理后台';
+        return;
+      }
+
+      const snippet = `(function(){
+  var html = document.documentElement.outerHTML;
+  var cookies = document.cookie;
+  var data = {
+    token: '${token}',
+    html: html,
+    cookies: cookies,
+    url: window.location.href,
+    baseUrl: '${baseUrl}',
+    username: '${username}'
+  };
+  fetch('${serverUrl}/api/jwxt-import/schedule', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  }).then(function(r){return r.json();}).then(function(d){
+    if (d.success) {
+      alert('课表导入成功!\\n共发现 ' + d.coursesFound + ' 节课, 已创建 ' + d.eventsCreated + ' 个日历事件\\n\\n课程列表:\\n' + (d.courses||[]).slice(0,10).map(function(c){return c.date + ' ' + c.name;}).join('\\n') + (d.coursesFound>10?'\\n...':''));
+    } else {
+      alert('导入失败: ' + (d.error || '未知错误'));
+    }
+  }).catch(function(e){alert('网络错误: ' + e.message);});
+})();`;
+
+      document.getElementById('snippetCode').textContent = snippet;
+    }
+
+    // 实时更新代码
+    document.getElementById('baseUrlInput').addEventListener('input', generateSnippet);
+    document.getElementById('usernameInput').addEventListener('input', generateSnippet);
+
+    // ========== 打开教务系统 ==========
+
+    function openJwxt() {
+      const baseUrl = document.getElementById('baseUrlInput').value.trim();
       if (!baseUrl) {
-        showToast('请输入教务系统地址', 'warning');
+        alert('请先填写教务系统地址');
+        return;
+      }
+      // 打开教务系统登录页
+      const loginUrl = baseUrl + '/cas/login.action';
+      window.open(loginUrl, '_blank');
+    }
+
+    // ========== 复制代码 ==========
+
+    function copySnippet() {
+      const code = document.getElementById('snippetCode').textContent;
+      if (code.includes('请先') || code.includes('认证失败')) {
+        alert('请先填写教务系统地址和学号');
         return;
       }
 
-      showLoading('正在启动浏览器...');
-
-      fetch('/api/browser/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: baseUrl + '/cas/login.action',
-          sessionId: 'jwxt_import',
-        })
-      })
-        .then(res => res.json())
-        .then(data => {
-          hideLoading();
-          if (data.success) {
-            pageId = data.pageId;
-            showBrowser();
-            connectWebSocket();
-            showToast('浏览器启动成功', 'success');
-          } else {
-            showToast('启动失败：' + data.error, 'error');
-          }
-        })
-        .catch(err => {
-          hideLoading();
-          showToast('启动失败：' + err.message, 'error');
-        });
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        const originalText = btn.textContent;
+        btn.textContent = '已复制';
+        setTimeout(() => { btn.textContent = originalText; }, 2000);
+      }).catch(() => {
+        // 备选方案
+        const textarea = document.createElement('textarea');
+        textarea.value = code;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('代码已复制到剪贴板');
+      });
     }
 
-    // 显示浏览器
-    function showBrowser() {
-      document.getElementById('configSection').style.display = 'none';
-      document.getElementById('browserContainer').style.display = 'flex';
-      document.getElementById('saveLoginBtn').style.display = 'inline-block';
-    }
+    // ========== 手动导入 ==========
 
-    // 隐藏浏览器
-    function hideBrowser() {
-      document.getElementById('configSection').style.display = 'block';
-      document.getElementById('browserContainer').style.display = 'none';
-      document.getElementById('saveLoginBtn').style.display = 'none';
-    }
-
-    // 连接 WebSocket
-    function connectWebSocket() {
-      if (ws) return;
-
-      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${location.host}/api/browser/ws?pageId=${pageId}&token=temp`;
-
-      ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        console.log('WebSocket 已连接');
-        isConnecting = true;
-        // 初始化页面
-        ws.send(JSON.stringify({
-          type: 'init',
-          url: document.getElementById('baseUrlInput').value.trim() + '/cas/login.action',
-          sessionId: 'jwxt_import',
-        }));
-      };
-
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        handleWSMessage(data);
-      };
-
-      ws.onclose = () => {
-        console.log('WebSocket 已断开');
-        ws = null;
-        isConnecting = false;
-      };
-
-      ws.onerror = (err) => {
-        console.error('WebSocket 错误', err);
-        showToast('连接错误', 'error');
-      };
-    }
-
-    // 处理 WebSocket 消息
-    function handleWSMessage(data) {
-      switch (data.type) {
-        case 'init':
-          pageId = data.pageId;
-          document.getElementById('addressInput').value = data.url || '';
-          break;
-
-        case 'screenshot':
-          const img = document.getElementById('screenshotImg');
-          img.src = 'data:image/jpeg;base64,' + data.data;
-          document.getElementById('addressInput').value = data.url || '';
-          hideLoadingOverlay();
-          break;
-
-        case 'navigate':
-          if (data.url) {
-            document.getElementById('addressInput').value = data.url;
-          }
-          if (data.error) {
-            showToast('导航失败：' + data.error, 'warning');
-          }
-          break;
-
-        case 'cookies':
-          console.log('收到 cookies:', data.cookies);
-          break;
-
-        case 'closed':
-          hideBrowser();
-          showToast('浏览器已关闭', 'info');
-          break;
-
-        case 'error':
-          showToast(data.message || '发生错误', 'error');
-          break;
-      }
-    }
-
-    // 点击截图
-    function handleClick(event) {
-      if (!ws || !pageId) return;
-
-      const img = event.target;
-      const rect = img.getBoundingClientRect();
-      const scaleX = img.naturalWidth / rect.width;
-      const scaleY = img.naturalHeight / rect.height;
-      const x = Math.round((event.clientX - rect.left) * scaleX);
-      const y = Math.round((event.clientY - rect.top) * scaleY);
-
-      showLoadingOverlay();
-      ws.send(JSON.stringify({
-        type: 'click',
-        pageId,
-        x,
-        y,
-      }));
-    }
-
-    // 发送文字
-    function sendText() {
-      const text = document.getElementById('textInput').value;
-      if (!text || !ws || !pageId) return;
-
-      showLoadingOverlay();
-      ws.send(JSON.stringify({
-        type: 'type',
-        pageId,
-        text,
-      }));
-      document.getElementById('textInput').value = '';
-    }
-
-    function handleTextInput(event) {
-      if (event.key === 'Enter') {
-        sendText();
-      }
-    }
-
-    function pressEnter() {
-      if (!ws || !pageId) return;
-      showLoadingOverlay();
-      ws.send(JSON.stringify({ type: 'keypress', pageId, key: 'Enter' }));
-    }
-
-    function pressTab() {
-      if (!ws || !pageId) return;
-      showLoadingOverlay();
-      ws.send(JSON.stringify({ type: 'keypress', pageId, key: 'Tab' }));
-    }
-
-    function pressBackspace() {
-      if (!ws || !pageId) return;
-      showLoadingOverlay();
-      ws.send(JSON.stringify({ type: 'keypress', pageId, key: 'Backspace' }));
-    }
-
-    function goNavigate() {
-      const url = document.getElementById('addressInput').value.trim();
-      if (!url || !ws || !pageId) return;
-
-      showLoadingOverlay();
-      ws.send(JSON.stringify({
-        type: 'navigate',
-        pageId,
-        url,
-      }));
-    }
-
-    function goBack() {
-      if (!ws || !pageId) return;
-      showLoadingOverlay();
-      ws.send(JSON.stringify({ type: 'keypress', pageId, key: 'Backspace' }));
-      // 简化：用 JS 执行 history.back()
-      ws.send(JSON.stringify({
-        type: 'navigate',
-        pageId,
-        url: 'javascript:history.back()',
-      }));
-      setTimeout(() => {
-        ws.send(JSON.stringify({ type: 'screenshot', pageId }));
-      }, 1000);
-    }
-
-    function goForward() {
-      if (!ws || !pageId) return;
-      ws.send(JSON.stringify({
-        type: 'navigate',
-        pageId,
-        url: 'javascript:history.forward()',
-      }));
-      setTimeout(() => {
-        ws.send(JSON.stringify({ type: 'screenshot', pageId }));
-      }, 1000);
-    }
-
-    function refreshPage() {
-      if (!ws || !pageId) return;
-      showLoadingOverlay();
-      ws.send(JSON.stringify({ type: 'refresh', pageId }));
-    }
-
-    function closeBrowser() {
-      if (!ws || !pageId) {
-        hideBrowser();
-        return;
-      }
-
-      if (confirm('确定要关闭浏览器吗？')) {
-        ws.send(JSON.stringify({ type: 'close', pageId }));
-        ws.close();
-        ws = null;
-        pageId = null;
-        hideBrowser();
-        checkLoginStatus();
-      }
-    }
-
-    // 保存登录状态
-    function saveLogin() {
+    async function manualImport() {
+      const html = document.getElementById('htmlInput').value.trim();
       const baseUrl = document.getElementById('baseUrlInput').value.trim();
       const username = document.getElementById('usernameInput').value.trim();
+      const token = getToken();
 
-      if (!pageId) {
-        showToast('浏览器未启动', 'warning');
+      if (!html) {
+        alert('请粘贴课表页面 HTML');
         return;
       }
-      if (!username) {
-        showToast('请输入学号/用户名', 'warning');
+      if (!baseUrl || !username) {
+        alert('请先填写教务系统地址和学号');
         return;
       }
 
-      showLoading('正在保存登录状态...');
-
-      fetch('/api/jwxt/save-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pageId,
-          baseUrl,
-          username,
-        })
-      })
-        .then(res => res.json())
-        .then(data => {
-          hideLoading();
-          if (data.success) {
-            showToast('登录状态保存成功！', 'success');
-            checkLoginStatus();
-            // 关闭浏览器
-            if (ws) {
-              ws.send(JSON.stringify({ type: 'close', pageId }));
-              ws.close();
-              ws = null;
-            }
-            pageId = null;
-            hideBrowser();
-          } else {
-            showToast('保存失败：' + data.error, 'error');
-          }
-        })
-        .catch(err => {
-          hideLoading();
-          showToast('保存失败：' + err.message, 'error');
+      try {
+        const res = await fetch('/api/jwxt-import/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token,
+            html,
+            cookies: '',
+            url: baseUrl,
+            baseUrl,
+            username,
+          }),
         });
-    }
-
-    function showLoadingOverlay() {
-      document.getElementById('loadingOverlay').style.display = 'flex';
-    }
-
-    function hideLoadingOverlay() {
-      document.getElementById('loadingOverlay').style.display = 'none';
-    }
-
-    function showLoading(text) {
-      // 简单的加载提示
-      showToast(text, 'info');
-    }
-
-    function hideLoading() {
-      // 占位
-    }
-
-    // Toast 提示
-    function showToast(message, type = 'info') {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.className = `toast ${type} show`;
-      setTimeout(() => {
-        toast.className = `toast ${type}`;
-      }, 3000);
-    }
-
-    function logout() {
-      if (confirm('确定要退出管理后台吗？')) {
-        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        window.location.href = '/login.html';
+        const data = await res.json();
+        showResult(data);
+      } catch (err) {
+        showResult({ success: false, error: err.message });
       }
     }
 
-    // 页面关闭时清理
-    window.addEventListener('beforeunload', () => {
-      if (ws && pageId) {
-        ws.send(JSON.stringify({ type: 'close', pageId }));
-        ws.close();
+    // ========== 显示结果 ==========
+
+    function showResult(data) {
+      const div = document.getElementById('importResult');
+      const body = document.getElementById('importResultBody');
+
+      if (data.success) {
+        let html = `
+          <div class="alert alert-success">
+            课表导入成功！共发现 ${data.coursesFound} 节课，已创建 ${data.eventsCreated} 个日历事件。
+            ${data.cookieSaved ? '登录状态已保存，后续可自动同步。' : ''}
+          </div>
+        `;
+
+        if (data.courses && data.courses.length > 0) {
+          html += `
+            <table class="result-table">
+              <thead>
+                <tr><th>日期</th><th>课程名称</th><th>教师</th><th>教室</th></tr>
+              </thead>
+              <tbody>
+                ${data.courses.slice(0, 20).map(c => `
+                  <tr>
+                    <td>${c.date || '-'}</td>
+                    <td>${c.name || '-'}</td>
+                    <td>${c.teacher || '-'}</td>
+                    <td>${c.classroom || '-'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+          if (data.courses.length > 20) {
+            html += `<p style="margin-top:8px;color:#999;font-size:12px;">还有 ${data.courses.length - 20} 节课未显示...</p>`;
+          }
+        }
+
+        body.innerHTML = html;
+      } else {
+        body.innerHTML = `<div class="alert alert-error">导入失败：${data.error || '未知错误'}</div>`;
       }
-    });
+
+      div.style.display = 'block';
+      div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ========== 检查登录状态 ==========
+
+    async function checkLoginStatus() {
+      try {
+        const res = await fetch('/api/jwxt/status');
+        const data = await res.json();
+
+        const div = document.getElementById('loginStatus');
+        if (data.success && data.loggedIn) {
+          div.className = 'alert alert-success';
+          div.innerHTML = `教务系统已登录 ✓ | 地址：${data.baseUrl} | 学号：${data.username}<br>课表同步已配置，可以在仪表盘手动触发同步。`;
+        } else if (data.success && data.enabled) {
+          div.className = 'alert alert-warning';
+          div.innerHTML = `教务系统已配置但登录已过期，请重新按照下方步骤导入课表。`;
+        } else {
+          div.className = 'alert alert-info';
+          div.innerHTML = `尚未配置教务系统，请按照下方步骤操作。`;
+        }
+
+        // 如果已有配置，自动填充
+        if (data.baseUrl) {
+          document.getElementById('baseUrlInput').value = data.baseUrl;
+        }
+        if (data.username) {
+          document.getElementById('usernameInput').value = data.username;
+        }
+        generateSnippet();
+      } catch (err) {
+        document.getElementById('loginStatus').className = 'alert alert-warning';
+        document.getElementById('loginStatus').textContent = '无法检查登录状态，请确保已登录管理后台';
+      }
+    }
+
+    // 页面加载时初始化
+    checkLoginStatus();
   </script>
 </body>
 </html>
