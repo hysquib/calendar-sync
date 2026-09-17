@@ -32,7 +32,7 @@ router.use((req, res, next) => {
  */
 router.post('/schedule', async (req, res) => {
   try {
-    const { token, html, cookies, url, baseUrl, username } = req.body;
+    const { token, html, cookies, url, baseUrl, username, semesterStart } = req.body;
 
     // 验证 token
     if (!token || !verifyToken(token)) {
@@ -43,10 +43,10 @@ router.post('/schedule', async (req, res) => {
       return res.status(400).json({ success: false, error: '未收到页面内容' });
     }
 
-    logger.info('收到教务系统课表导入请求', { url, htmlLength: html.length });
+    logger.info('收到教务系统课表导入请求', { url, htmlLength: html.length, isMHTML: html.includes('MIME-Version') });
 
     // 解析课表 HTML
-    const jwxtService = new JWXTService({ baseUrl: baseUrl || '', username: username || '' });
+    const jwxtService = new JWXTService({ baseUrl: baseUrl || '', username: username || '', semesterStart: semesterStart || '2026-09-01' });
     const courses = jwxtService.parseScheduleHTML(html);
 
     // 转换为日历事件

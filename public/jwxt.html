@@ -331,9 +331,14 @@
           📋 直接打开课表页
         </button>
         <p style="margin-top: 12px; color: #999; font-size: 12px;">
-          先用「打开教务系统」登录，登录成功后再用「直接打开课表页」打开课表页面。<br>
-          <strong>注意：必须在校园网环境下操作。</strong>
-        </p>
+            先用「打开教务系统」登录，登录成功后再用「直接打开课表页」打开课表页面。<br>
+            <strong>注意：必须在校园网环境下操作。</strong>
+          </p>
+          <div class="form-group" style="margin-top: 12px;">
+            <label>学期开始日期（第1周周一）</label>
+            <input type="date" id="semesterStartInput" value="2026-09-01">
+            <div class="form-tip">用于将"第N周周X"转换为实际日期，请填写本学期第一周的周一日期</div>
+          </div>
       </div>
     </div>
 
@@ -375,7 +380,7 @@
           <p style="color: #999; font-size: 12px; margin-bottom: 10px;">
             在课表页面按 <kbd>Ctrl+S</kbd> 保存网页为 HTML 文件，然后上传：
           </p>
-          <input type="file" id="htmlFileInput" accept=".html,.htm" style="margin-bottom: 10px;">
+          <input type="file" id="htmlFileInput" accept=".html,.htm,.mhtml,.mht" style="margin-bottom: 10px;">
           <button class="btn btn-primary" onclick="uploadFile()">
             📤 上传文件导入
           </button>
@@ -547,6 +552,7 @@
       const html = document.getElementById('htmlInput').value.trim();
       const baseUrl = document.getElementById('baseUrlInput').value.trim();
       const username = document.getElementById('usernameInput').value.trim();
+      const semesterStart = document.getElementById('semesterStartInput')?.value || '2026-09-01';
       const token = getToken();
 
       if (!html) {
@@ -569,6 +575,7 @@
             url: baseUrl,
             baseUrl,
             username,
+            semesterStart,
           }),
         });
         const data = await res.json();
@@ -591,6 +598,7 @@
 
       const baseUrl = document.getElementById('baseUrlInput').value.trim();
       const username = document.getElementById('usernameInput').value.trim();
+      const semesterStart = document.getElementById('semesterStartInput')?.value || '2026-09-01';
       const token = getToken();
 
       if (!baseUrl || !username) {
@@ -598,7 +606,7 @@
         return;
       }
 
-      // 读取文件内容
+      // 读取文件内容（不指定编码，服务器端处理 MHTML 解码）
       const reader = new FileReader();
       reader.onload = async function(e) {
         const html = e.target.result;
@@ -618,6 +626,7 @@
               url: baseUrl,
               baseUrl,
               username,
+              semesterStart,
             }),
           });
           const data = await res.json();
@@ -629,7 +638,7 @@
       reader.onerror = function() {
         alert('文件读取失败');
       };
-      reader.readAsText(file, 'GBK');
+      reader.readAsText(file);
     }
 
     // ========== 显示结果 ==========

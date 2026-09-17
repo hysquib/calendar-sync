@@ -19,22 +19,21 @@ const axiosInstance = axios.create({
   validateStatus: () => true,
 });
 
+// GBK 解码器
+const gbkDecoder = new TextDecoder('gbk');
+
 /**
  * 教务系统服务（青果 KINGOSOFT）
- * 
- * 工作方式：
- * 1. 首次通过 Puppeteer 内嵌浏览器手动登录
- * 2. 保存登录 cookie
- * 3. 后续同步直接用 cookie + axios 抓取课表页面
- * 4. cookie 失效时通知用户重新登录
  */
 class JWXTService {
   constructor(config) {
-    this.baseUrl = config.baseUrl || ''; // 教务系统根地址
+    this.baseUrl = config.baseUrl || '';
     this.username = config.username || '';
     this.cookies = null;
     this.cookieFile = null;
     this.isLoggedIn = false;
+    // 学期开始日期（周一），用于将周次转换为实际日期
+    this.semesterStart = config.semesterStart || '2026-09-01';
   }
 
   /**
@@ -45,15 +44,12 @@ class JWXTService {
     const dataDir = configManager.getDataDir();
     this.cookieFile = path.join(dataDir, 'jwxt-cookies.json');
 
-    // 尝试加载保存的 cookie
     try {
       if (fs.existsSync(this.cookieFile)) {
         const data = JSON.parse(fs.readFileSync(this.cookieFile, 'utf-8'));
         if (data.baseUrl === this.baseUrl && data.username === this.username) {
           this.cookies = data.cookies;
           logger.info('已加载教务系统保存的 cookie', { username: this.username });
-          
-          // 检查 cookie 是否有效
           const valid = await this.checkLoginStatus();
           if (valid) {
             this.isLoggedIn = true;
@@ -70,7 +66,7 @@ class JWXTService {
   }
 
   /**
-   * 保存 cookie 到文件
+   * 保存 cookie
    */
   saveCookies(cookies, baseUrl, username) {
     this.cookies = cookies;
@@ -103,11 +99,8 @@ class JWXTService {
    */
   async checkLoginStatus() {
     if (!this.cookies || !this.baseUrl) return false;
-
     try {
       const cookieStr = this.cookies.map(c => `${c.name}=${c.value}`).join('; ');
-      
-      // 尝试访问需要登录的页面
       const response = await axiosInstance.get(`${this.baseUrl}/frame/homepage`, {
         headers: {
           'Cookie': cookieStr,
@@ -116,24 +109,10 @@ class JWXTService {
         maxRedirects: 0,
         validateStatus: () => true,
       });
-
-      // 如果跳转到登录页或返回 302，说明 cookie 失效
-      if (response.status === 302 || response.status === 301) {
-        return false;
-      }
-
-      // 检查页面内容是否包含登录相关字样
+      if (response.status === 302 || response.status === 301) return false;
       const html = response.data;
-      if (html.includes('登录') && html.includes('密码') && html.includes('验证码')) {
-        return false;
-      }
-
-      // 检查是否有学生姓名或个人信息
-      if (html.includes('学生') || html.includes('姓名') || html.includes('个人信息')) {
-        return true;
-      }
-
-      // 默认认为有效（页面能正常返回）
+      if (html.includes('登录') && html.includes('密码') && html.includes('验证码')) return false;
+      if (html.includes('学生') || html.includes('姓名') || html.includes('个人信息')) return true;
       return response.status === 200;
     } catch (error) {
       logger.warn('检查教务系统登录状态失败', { error: error.message });
@@ -141,347 +120,386 @@ class JWXTService {
     }
   }
 
-  /**
-   * 获取 cookie 字符串
-   */
   getCookieString() {
     if (!this.cookies) return '';
     return this.cookies.map(c => `${c.name}=${c.value}`).join('; ');
   }
 
+  // ========== MHTML 解析 ==========
+
   /**
-   * 获取周课表
-   * @param {string} weekStartDate - 周开始日期 YYYYMMDD
+   * 解析 MHTML 文件，提取所有 HTML 部分
    */
-  async getWeekSchedule(weekStartDate) {
-    if (!this.isLoggedIn) {
-      throw new Error('教务系统未登录，请先登录');
+  parseMHTML(content) {
+    const htmlParts = [];
+
+    // 检测是否是 MHTML
+    if (!content.includes('MIME-Version') && !content.includes('multipart/related')) {
+      // 普通 HTML，直接返回
+      return [{ html: content, location: '' }];
     }
 
-    try {
-      const cookieStr = this.getCookieString();
-      
-      // 青果教务系统课表地址（可能因学校而异，这里用常见路径）
-      // 先尝试获取学生课表页面
-      const response = await axiosInstance.get(
-        `${this.baseUrl}/student/course/grkb11.jsp`,
-        {
-          headers: {
-            'Cookie': cookieStr,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Referer': `${this.baseUrl}/frame/homepage`,
-          },
-          params: {
-            xnxqdm: '', // 学年学期代码
-            zc: '',    // 周次
-          },
-          timeout: 15000,
-        }
-      );
+    // 提取 boundary
+    const boundaryMatch = content.match(/boundary="?([^\s"\r\n]+)"?/);
+    if (!boundaryMatch) {
+      return [{ html: content, location: '' }];
+    }
+    const boundary = boundaryMatch[1];
 
-      return this.parseScheduleHTML(response.data);
-    } catch (error) {
-      logger.error('获取周课表失败', { error: error.message });
-      
-      // 如果是登录失效，标记为未登录
-      if (error.response?.status === 302 || 
-          error.response?.status === 401 ||
-          error.message?.includes('登录')) {
-        this.isLoggedIn = false;
+    // 按 boundary 分割
+    const parts = content.split('--' + boundary);
+    for (const part of parts) {
+      // 跳过前导文本和结尾
+      if (!part.trim() || part.trim() === '--') continue;
+
+      // 分离 headers 和 body
+      const headerBodyMatch = part.match(/^\r?\n([\s\S]*?)(\r?\n\r?\n)([\s\S]*)$/);
+      if (!headerBodyMatch) continue;
+
+      const headers = headerBodyMatch[1];
+      let body = headerBodyMatch[3];
+
+      // 检查 Content-Type
+      const isHTML = /Content-Type:\s*text\/html/i.test(headers);
+      if (!isHTML) continue;
+
+      // 提取 Content-Location
+      const locationMatch = headers.match(/Content-Location:\s*(\S+)/);
+      const location = locationMatch ? locationMatch[1] : '';
+
+      // 解码 quoted-printable
+      const isQP = /Content-Transfer-Encoding:\s*quoted-printable/i.test(headers);
+      if (isQP) {
+        body = this.decodeQuotedPrintable(body);
       }
-      
-      throw error;
-    }
-  }
 
-  /**
-   * 获取指定日期的课表
-   */
-  async getDaySchedule(dateStr) {
-    // 青果教务系统通常按周返回，所以先获取本周课表再筛选
-    const date = dayjs(dateStr);
-    const weekStart = date.startOf('week').add(1, 'day'); // 周一为一周开始（中国习惯）
-    
-    const weekCourses = await this.getWeekSchedule(weekStart.format('YYYYMMDD'));
-    
-    // 筛选指定日期的课程
-    return weekCourses.filter(course => {
-      const courseDate = dayjs(course.date);
-      return courseDate.isSame(date, 'day');
+      htmlParts.push({ html: body, location });
+    }
+
+    logger.info(`MHTML 解析完成，找到 ${htmlParts.length} 个 HTML 部分`, {
+      locations: htmlParts.map(p => p.location).slice(0, 5)
     });
+
+    return htmlParts;
   }
 
   /**
-   * 获取未来 N 天的课表并转换为日历事件
+   * 解码 quoted-printable 编码，返回 UTF-8 字符串
    */
-  async getCalendarEvents(daysAhead = 14) {
-    logger.info('开始获取教务系统课表数据', { daysAhead, baseUrl: this.baseUrl });
-
-    if (!this.isLoggedIn) {
-      throw new Error('教务系统未登录');
-    }
-
-    const events = [];
-    const today = dayjs();
-
-    try {
-      // 获取今天所在周的课表 + 接下来几周
-      const totalWeeks = Math.ceil(daysAhead / 7) + 1;
-      
-      for (let w = 0; w < totalWeeks; w++) {
-        const weekDate = today.add(w * 7, 'day');
-        const weekCourses = await this.getWeekSchedule(weekDate.format('YYYYMMDD'));
-        
-        for (const course of weekCourses) {
-          const courseDate = dayjs(course.date);
-          // 只保留未来 N 天内的课程
-          if (courseDate.isAfter(today.subtract(1, 'day')) && 
-              courseDate.isBefore(today.add(daysAhead, 'day'))) {
-            events.push(this.courseToEvent(course));
-          }
+  decodeQuotedPrintable(text) {
+    // 移除软换行（行尾的 =）
+    let cleaned = text.replace(/=\r?\n/g, '');
+    // 解码 =XX 为字节
+    const bytes = [];
+    let i = 0;
+    while (i < cleaned.length) {
+      if (cleaned[i] === '=' && i + 2 < cleaned.length) {
+        const hex = cleaned.substr(i + 1, 2);
+        if (/^[0-9A-Fa-f]{2}$/.test(hex)) {
+          bytes.push(parseInt(hex, 16));
+          i += 3;
+          continue;
         }
-
-        // 避免请求过快
-        await new Promise(r => setTimeout(r, 500));
       }
-
-      logger.info(`教务系统课表获取完成，共 ${events.length} 节课`);
-      return events;
-    } catch (error) {
-      logger.error('获取教务系统课表失败', { error: error.message });
-      throw error;
+      // 普通 ASCII 字符直接编码
+      const code = cleaned.charCodeAt(i);
+      if (code < 128) {
+        bytes.push(code);
+      } else {
+        // 非 ASCII 字符（理论上 QP 中不应该出现，但以防万一）
+        const encoded = new TextEncoder().encode(cleaned[i]);
+        for (const b of encoded) bytes.push(b);
+      }
+      i++;
+    }
+    // 用 GBK 解码
+    const uint8 = new Uint8Array(bytes);
+    try {
+      return gbkDecoder.decode(uint8);
+    } catch (e) {
+      // 如果 GBK 解码失败，尝试 UTF-8
+      return new TextDecoder('utf-8').decode(uint8);
     }
   }
 
+  // ========== 课表解析 ==========
+
   /**
-   * 解析课表 HTML
-   * 青果教务系统课表通常是一个大表格
+   * 解析课表 HTML / MHTML
+   * 自动检测格式，提取课程信息
    */
-  parseScheduleHTML(html) {
-    const courses = [];
-    
-    try {
-      const $ = cheerio.load(html, { decodeEntities: true });
+  parseScheduleHTML(content) {
+    // 先尝试 MHTML 解析
+    const htmlParts = this.parseMHTML(content);
 
-      // 检查是否是框架页面（iframe），不是课表内容
-      const iframes = $('iframe');
-      if (iframes.length > 0 && !$('table').length) {
-        logger.warn('检测到这是框架页面，不是课表内容页面', { iframes: iframes.length });
-        return courses;
+    // 找到包含 DataTable 的部分（课表数据在这里）
+    let scheduleHtml = null;
+    for (const part of htmlParts) {
+      if (part.location.includes('DataTable') || part.html.includes('sdTable_tbody')) {
+        scheduleHtml = part.html;
+        logger.info('找到 DataTable 课表内容', { location: part.location, length: part.html.length });
+        break;
       }
+    }
 
-      // 查找课表表格 — 多种选择器尝试
-      let $table = null;
-      const selectors = [
-        '#kbgrid_table_0',
-        '#kbgrid_table',
-        '.kbgrid_table',
-        '#1',
-        'table.kbtable',
-        'table[id*="kbgrid"]',
-        'table[id*="kb"]',
-        '#td0 > table',
-        'div.kbtable > table',
-        'div[id*="kb"] > table',
-      ];
-
-      for (const sel of selectors) {
-        if ($(sel).length) {
-          $table = $(sel).first();
-          logger.info('找到课表表格', { selector: sel, rows: $table.find('tr').length });
+    // 如果没找到 DataTable，尝试找包含课表关键词的部分
+    if (!scheduleHtml) {
+      for (const part of htmlParts) {
+        if (part.html.includes('tr0_kc') || part.html.includes('sksj') || part.html.includes('qsz')) {
+          scheduleHtml = part.html;
+          logger.info('找到课表内容（关键词匹配）', { length: part.html.length });
           break;
         }
       }
+    }
 
-      // 如果上面的选择器没找到，找含有 rowspan 且行数 > 3 的最大表格
-      if (!$table || !$table.length) {
-        let bestTable = null;
-        let maxRows = 0;
-        $('table').each((i, tbl) => {
-          const $tbl = $(tbl);
-          const rows = $tbl.find('tr').length;
-          const hasRowspan = $tbl.find('td[rowspan]').length;
-          if (rows > maxRows && (hasRowspan > 0 || rows > 5)) {
-            maxRows = rows;
-            bestTable = $tbl;
-          }
-        });
-        if (bestTable) {
-          $table = bestTable;
-          logger.info('通过通用搜索找到可能的课表表格', { rows: maxRows });
-        }
+    // 如果还没有，用第一个 HTML 部分
+    if (!scheduleHtml && htmlParts.length > 0) {
+      scheduleHtml = htmlParts[0].html;
+    }
+
+    if (!scheduleHtml) {
+      logger.warn('无法提取课表 HTML 内容');
+      return [];
+    }
+
+    return this.parseDataTable(scheduleHtml);
+  }
+
+  /**
+   * 解析青果教务系统 DataTable 格式课表
+   * 表格是列表格式，每行包含：课程名、周次、上课时间、地点、教师
+   */
+  parseDataTable(html) {
+    const courses = [];
+
+    try {
+      const $ = cheerio.load(html, { decodeEntities: true });
+
+      // 找到数据表
+      let $tbody = $('#sdTable_tbody');
+      if (!$tbody.length) {
+        $tbody = $('tbody').first();
       }
-
-      if (!$table || !$table.length) {
-        // 记录所有表格信息用于调试
-        const allTables = $('table').map((i, t) => ({
-          idx: i,
-          id: $(t).attr('id') || '',
-          class: $(t).attr('class') || '',
-          rows: $(t).find('tr').length,
-        })).get();
-        logger.warn('未找到课表表格', { totalTables: allTables.length, tables: allTables.slice(0, 10) });
+      if (!$tbody.length) {
+        logger.warn('未找到课表数据表 tbody');
         return courses;
       }
 
-      // 获取日期行（在表头中查找）
-      const dates = [];
-      $table.find('tr').each((rowIdx, tr) => {
-        if (rowIdx > 2) return; // 只看前3行
-        $(tr).find('th, td').each((i, cell) => {
-          const text = $(cell).text().trim();
-          // 匹配多种日期格式：09-01, 9月1日, 09/01, 周一 09-01 等
-          const dateMatch = text.match(/(\d{1,2})[-\/月](\d{1,2})/);
-          if (dateMatch && !dates[i]) {
-            const month = parseInt(dateMatch[1]);
-            const day = parseInt(dateMatch[2]);
-            const year = new Date().getFullYear();
-            dates[i] = dayjs(`${year}-${month}-${day}`).format('YYYY-MM-DD');
-          }
-        });
-      });
+      const rows = $tbody.find('tr');
+      logger.info(`找到 ${rows.length} 行课表数据`);
 
-      logger.info('解析到日期列', { dates: dates.filter(d => d) });
+      let lastCourseName = '';
+      let lastCourseInfo = {};
 
-      // 如果没有找到日期，使用星期几（周一到周日）推算
-      if (dates.filter(d => d).length === 0) {
-        const today = dayjs();
-        const monday = today.subtract(today.day() - 1, 'day');
-        $table.find('tr').first().find('th, td').each((i, cell) => {
-          const text = $(cell).text().trim();
-          if (text.includes('周一') || text.includes('星期一')) dates[i] = monday.format('YYYY-MM-DD');
-          if (text.includes('周二') || text.includes('星期二')) dates[i] = monday.add(1, 'day').format('YYYY-MM-DD');
-          if (text.includes('周三') || text.includes('星期三')) dates[i] = monday.add(2, 'day').format('YYYY-MM-DD');
-          if (text.includes('周四') || text.includes('星期四')) dates[i] = monday.add(3, 'day').format('YYYY-MM-DD');
-          if (text.includes('周五') || text.includes('星期五')) dates[i] = monday.add(4, 'day').format('YYYY-MM-DD');
-          if (text.includes('周六') || text.includes('星期六')) dates[i] = monday.add(5, 'day').format('YYYY-MM-DD');
-          if (text.includes('周日') || text.includes('星期日') || text.includes('星期天')) dates[i] = monday.add(6, 'day').format('YYYY-MM-DD');
-        });
-      }
-
-      // 遍历每一行（每一节）
-      $table.find('tr').each((rowIdx, tr) => {
-        if (rowIdx < 1) return; // 跳过表头行
-
+      rows.each((idx, tr) => {
         const $tr = $(tr);
-        const $cells = $tr.find('td');
-        let sectionInfo = $cells.first().text().trim();
-        let sectionMatch = sectionInfo.match(/第?(\d+)/);
-        let sectionStart = sectionMatch ? parseInt(sectionMatch[1]) : rowIdx;
+        const rowId = $tr.attr('id') || `tr${idx}`;
 
-        $cells.each((colIdx, td) => {
-          if (colIdx === 0) return; // 跳过节次列
+        // 提取各字段（用 title 属性获取完整文本）
+        const courseName = this.getCellText($, $tr, rowId, 'kc');
+        const weekStr = this.getCellText($, $tr, rowId, 'qsz');
+        const timeStr = this.getCellText($, $tr, rowId, 'sksj');
+        const locationStr = this.getCellText($, $tr, rowId, 'skdd');
+        const teacherStr = this.getCellText($, $tr, rowId, 'rkjs');
+        const courseType = this.getCellText($, $tr, rowId, 'skfs');
+        const classInfo = this.getCellText($, $tr, rowId, 'curent_skbzdmmc');
 
-          const $td = $(td);
-          const content = $td.html();
-          
-          if (!content || content.trim().length < 2) return;
+        // 如果课程名为空，用上一个非空课程名
+        let actualCourseName = courseName;
+        if (!actualCourseName && lastCourseName) {
+          actualCourseName = lastCourseName;
+        } else if (actualCourseName) {
+          lastCourseName = actualCourseName;
+          lastCourseInfo = { courseType, classInfo };
+        }
 
-          // 检查是否有课程
-          const courseName = this.extractCourseName(content);
-          
-          if (courseName) {
-            const rowspan = parseInt($td.attr('rowspan')) || 1;
-            const dateIdx = colIdx;
-            
-            const dateStr = dates[dateIdx] || '';
+        // 必须有周次和时间才能生成事件
+        if (!weekStr || !timeStr) return;
+
+        // 清理课程名中的编号前缀 [07000070]
+        actualCourseName = actualCourseName.replace(/^\[\d+\]/, '').trim();
+
+        // 解析周次 "1-3,6-8,11-15" → [1,2,3,6,7,8,11,12,13,14,15]
+        const weeks = this.parseWeekRange(weekStr);
+        if (weeks.length === 0) return;
+
+        // 解析时间 "周一(7-8节)" → {dayOfWeek: 1, sections: [7,8]}
+        const timeSlots = this.parseTimeSlot(timeStr);
+        if (timeSlots.length === 0) return;
+
+        // 清理地点名
+        const cleanLocation = locationStr.replace(/\(.*?\)/g, '').trim();
+        const cleanTeacher = teacherStr.trim();
+
+        // 为每个周次 × 每个时间段生成一个课程条目
+        for (const week of weeks) {
+          for (const slot of timeSlots) {
+            const date = this.weekToDate(week, slot.dayOfWeek);
+            if (!date) continue;
 
             courses.push({
-              date: dateStr || dayjs().format('YYYY-MM-DD'),
-              section_start: sectionStart,
-              section_end: sectionStart + rowspan - 1,
-              course_name: courseName,
-              teacher: this.extractTeacher(content),
-              classroom: this.extractClassroom(content),
-              week: this.extractWeek(content),
-              raw: content,
+              date: date,
+              week: week,
+              dayOfWeek: slot.dayOfWeek,
+              section_start: slot.sections[0],
+              section_end: slot.sections[slot.sections.length - 1],
+              course_name: actualCourseName,
+              teacher: cleanTeacher,
+              classroom: cleanLocation,
+              course_type: courseType,
+              class_info: lastCourseInfo.classInfo || classInfo,
+              raw: `${actualCourseName} | ${weekStr} | ${timeStr} | ${locationStr}`,
             });
           }
-        });
+        }
       });
 
       logger.info(`课表解析完成，共 ${courses.length} 节课`);
 
     } catch (error) {
-      logger.error('解析课表 HTML 失败', { error: error.message, stack: error.stack });
+      logger.error('解析 DataTable 课表失败', { error: error.message, stack: error.stack });
     }
 
     return courses;
   }
 
   /**
-   * 从课表单元格中提取课程名
+   * 从表格行中提取单元格文本
    */
-  extractCourseName(content) {
-    const $ = cheerio.load(content);
-    // 尝试多种方式提取
-    let name = $('font[title]').attr('title') || 
-               $('a').first().text().trim() ||
-               $('div').first().text().trim() ||
-               $.text().trim();
-    
+  getCellText($, $tr, rowId, fieldName) {
+    // 先用 title 属性（青果系统把完整文本放在 title 里）
+    const $cell = $tr.find(`#${rowId}_${fieldName}`);
+    if ($cell.length) {
+      const title = $cell.attr('title');
+      if (title && title.trim()) return title.trim();
+      const text = $cell.text().trim();
+      if (text) return text;
+    }
+    // 备选：用 name 属性
+    const $cellByName = $tr.find(`td[name="${fieldName}"]`);
+    if ($cellByName.length) {
+      const title = $cellByName.attr('title');
+      if (title && title.trim()) return title.trim();
+      return $cellByName.text().trim();
+    }
+    return '';
+  }
+
+  /**
+   * 解析周次字符串
+   * "1-3,6-8,11-15" → [1,2,3,6,7,8,11,12,13,14,15]
+   * "5" → [5]
+   * "1,3,5,7" → [1,3,5,7]
+   */
+  parseWeekRange(str) {
+    const weeks = [];
+    if (!str) return weeks;
+
     // 清理
-    name = name.replace(/\s+/g, ' ').trim();
-    // 过滤掉太短的内容
-    if (name.length < 2) return null;
-    // 过滤掉纯数字或节次
-    if (/^\d+$/.test(name)) return null;
-    
-    return name.substring(0, 100);
-  }
+    str = str.replace(/周/g, '').replace(/\s+/g, '').trim();
 
-  /**
-   * 提取教师名
-   */
-  extractTeacher(content) {
-    const $ = cheerio.load(content);
-    const text = $.text();
-    // 常见格式：教师名、(教师名)、@教师名等
-    const patterns = [
-      /主讲[:：]\s*([^\n<]+)/,
-      /教师[:：]\s*([^\n<]+)/,
-      /@([^\n<\s]+)/,
-    ];
-    
-    for (const p of patterns) {
-      const m = text.match(p);
-      if (m && m[1]) return m[1].trim();
+    const parts = str.split(',');
+    for (const part of parts) {
+      const partStr = part.trim();
+      if (!partStr) continue;
+
+      // 匹配范围 "1-3"
+      const rangeMatch = partStr.match(/^(\d+)-(\d+)$/);
+      if (rangeMatch) {
+        const start = parseInt(rangeMatch[1]);
+        const end = parseInt(rangeMatch[2]);
+        for (let w = start; w <= end; w++) {
+          weeks.push(w);
+        }
+        continue;
+      }
+
+      // 匹配单个数字 "5"
+      const singleMatch = partStr.match(/^(\d+)$/);
+      if (singleMatch) {
+        weeks.push(parseInt(singleMatch[1]));
+      }
     }
-    
-    return '';
+
+    return weeks;
   }
 
   /**
-   * 提取教室
+   * 解析上课时间
+   * "周一(7-8节)" → [{dayOfWeek: 1, sections: [7,8]}]
+   * "周一(1-2节),周三(3-4节)" → [{dayOfWeek:1,sections:[1,2]},{dayOfWeek:3,sections:[3,4]}]
    */
-  extractClassroom(content) {
-    const $ = cheerio.load(content);
-    const text = $.text();
-    // 常见格式：教室名、{教室名}、[教室名]等
-    const patterns = [
-      /教室[:：]\s*([^\n<]+)/,
-      /地点[:：]\s*([^\n<]+)/,
-      /\{([^}]+)\}/,
-      /\[([^\]]+)\]/,
-    ];
-    
-    for (const p of patterns) {
-      const m = text.match(p);
-      if (m && m[1]) return m[1].trim();
+  parseTimeSlot(str) {
+    const slots = [];
+    if (!str) return slots;
+
+    // 匹配 "周X(N-M节)" 或 "星期X(N-M节)"
+    const pattern = /周([一二三四五六日天])\((\d+)-(\d+)节\)|星期([一二三四五六日天])\((\d+)-(\d+)节\)/g;
+    let match;
+    while ((match = pattern.exec(str)) !== null) {
+      const dayChar = match[1] || match[4];
+      const startSection = parseInt(match[2] || match[5]);
+      const endSection = parseInt(match[3] || match[6]);
+      const dayOfWeek = this.chineseToWeekday(dayChar);
+      if (dayOfWeek > 0) {
+        const sections = [];
+        for (let s = startSection; s <= endSection; s++) {
+          sections.push(s);
+        }
+        slots.push({ dayOfWeek, sections });
+      }
     }
-    
-    return '';
+
+    // 如果上面的模式没匹配到，尝试更灵活的匹配
+    if (slots.length === 0) {
+      // 匹配 "周X第N节" 或 "周X N-M节"
+      const flexPattern = /周([一二三四五六日天]).*?(\d+)[-,](\d+)?节?/g;
+      let flexMatch;
+      while ((flexMatch = flexPattern.exec(str)) !== null) {
+        const dayChar = flexMatch[1];
+        const startSection = parseInt(flexMatch[2]);
+        const endSection = flexMatch[3] ? parseInt(flexMatch[3]) : startSection;
+        const dayOfWeek = this.chineseToWeekday(dayChar);
+        if (dayOfWeek > 0) {
+          const sections = [];
+          for (let s = startSection; s <= endSection; s++) {
+            sections.push(s);
+          }
+          slots.push({ dayOfWeek, sections });
+        }
+      }
+    }
+
+    return slots;
   }
 
   /**
-   * 提取周次信息
+   * 中文星期转数字（周一=1, 周日=7）
    */
-  extractWeek(content) {
-    const $ = cheerio.load(content);
-    const text = $.text();
-    const m = text.match(/第?(\d+[-,，\d]*)周/);
-    return m ? m[0] : '';
+  chineseToWeekday(char) {
+    const map = {
+      '一': 1, '二': 2, '三': 3, '四': 4,
+      '五': 5, '六': 6, '日': 7, '天': 7,
+    };
+    return map[char] || 0;
   }
+
+  /**
+   * 根据周次和星期几计算实际日期
+   * @param {number} week - 第几周
+   * @param {number} dayOfWeek - 星期几（1=周一, 7=周日）
+   * @returns {string} YYYY-MM-DD
+   */
+  weekToDate(week, dayOfWeek) {
+    const semesterStart = dayjs(this.semesterStart);
+    // 第1周的第1天 = semesterStart
+    // 第N周的第D天 = semesterStart + (N-1)*7 + (D-1) 天
+    const date = semesterStart.add((week - 1) * 7 + (dayOfWeek - 1), 'day');
+    return date.format('YYYY-MM-DD');
+  }
+
+  // ========== 日历事件转换 ==========
 
   /**
    * 课程转换为日历事件
@@ -527,13 +545,15 @@ class JWXTService {
     if (course.section_start && course.section_end) {
       lines.push(`节次：第${course.section_start}-${course.section_end}节`);
     }
-    if (course.week) lines.push(`周次：${course.week}`);
+    if (course.week) lines.push(`第${course.week}周`);
+    if (course.course_type) lines.push(`类型：${course.course_type}`);
+    if (course.class_info) lines.push(`班级：${course.class_info}`);
     lines.push('', '--- 来自教务系统课表同步 ---');
     return lines.join('\n');
   }
 
   /**
-   * 获取课程开始时间
+   * 课程开始时间
    */
   getCourseStartTime(section) {
     const schedule = {
@@ -553,7 +573,7 @@ class JWXTService {
   }
 
   /**
-   * 获取课程结束时间
+   * 课程结束时间
    */
   getCourseEndTime(section) {
     const schedule = {
@@ -582,7 +602,6 @@ class JWXTService {
     if (!this.isLoggedIn) {
       return { success: false, error: '未登录或登录已过期，请重新登录' };
     }
-
     try {
       const valid = await this.checkLoginStatus();
       if (valid) {
