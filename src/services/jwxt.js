@@ -514,7 +514,7 @@ class JWXTService {
 
     return {
       id: `jwxt_${course.course_name}_${course.date}_${course.section_start}`.replace(/\s+/g, '_'),
-      subject: course.course_name,
+      subject: course.classroom ? `${course.course_name} @ ${course.classroom}` : course.course_name,
       body: {
         contentType: 'text',
         content: this.buildCourseDescription(course),
