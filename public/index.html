@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日历同步管理后台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+    }
+
+    /* 顶部导航 */
+    .header {
+      background: #fff;
+      border-bottom: 1px solid #e8e8e8;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+    }
+    .header-title {
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #52c41a;
+      display: inline-block;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .status-text {
+      font-size: 13px;
+      color: #666;
+    }
+    .btn-logout {
+      padding: 6px 14px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #666;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover {
+      border-color: #ff4d4f;
+      color: #ff4d4f;
+    }
+
+    /* 布局 */
+    .layout {
+      display: flex;
+      min-height: calc(100vh - 56px);
+    }
+
+    /* 侧边栏 */
+    .sidebar {
+      width: 220px;
+      background: #fff;
+      border-right: 1px solid #e8e8e8;
+      padding: 16px 0;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 24px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #555;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav-item:hover {
+      background: #f5f7fa;
+      color: #667eea;
+    }
+    .nav-item.active {
+      background: #f0f2ff;
+      color: #667eea;
+      border-left-color: #667eea;
+      font-weight: 500;
+    }
+    .nav-icon { font-size: 18px; }
+
+    /* 主内容区 */
+    .main {
+      flex: 1;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* 卡片 */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title .badge {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #f0f2ff;
+      color: #667eea;
+      font-weight: normal;
+    }
+    .card-title .badge.green { background: #f6ffed; color: #52c41a; }
+    .card-title .badge.gray { background: #f5f5f5; color: #999; }
+    .card-title .badge.red { background: #fff2f0; color: #ff4d4f; }
+
+    /* 统计卡片 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .stat-label {
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: #333;
+    }
+    .stat-value.small { font-size: 18px; }
+    .stat-icon {
+      float: right;
+      font-size: 32px;
+      opacity: 0.8;
+    }
+
+    /* 按钮 */
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #555;
+    }
+    .btn-secondary:hover { background: #e8e8e8; }
+    .btn-success { background: #52c41a; color: white; }
+    .btn-success:hover { background: #3fae0d; }
+    .btn-danger { background: #ff4d4f; color: white; }
+    .btn-danger:hover { background: #e83e3f; }
+    .btn-sm { padding: 5px 12px; font-size: 13px; }
+
+    /* 表单 */
+    .form-section {
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .form-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .form-section-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-section-title .icon { font-size: 18px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 13px;
+      color: #555;
+      font-weight: 500;
+    }
+    .form-group label .required { color: #ff4d4f; }
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 8px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    .form-group .tip {
+      font-size: 12px;
+      color: #999;
+    }
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    /* 开关 */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #667eea; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* 日志 */
+    .log-container {
+      background: #1e1e2e;
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 500px;
+      overflow-y: auto;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .log-line {
+      color: #cdd6f4;
+      white-space: pre-wrap;
+      word-break: break-all;
+      padding: 2px 0;
+    }
+    .log-line .time { color: #6c7086; }
+    .log-line .level-info { color: #89b4fa; }
+    .log-line .level-warn { color: #f9e2af; }
+    .log-line .level-error { color: #f38ba8; }
+    .log-line .level-debug { color: #a6e3a1; }
+    .log-toolbar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+    .log-toolbar select {
+      padding: 6px 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    /* Toast 提示 */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      z-index: 9999;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .toast.show { transform: translateX(0); }
+    .toast.success { background: #52c41a; }
+    .toast.error { background: #ff4d4f; }
+    .toast.info { background: #1890ff; }
+
+    /* 标签页配置区域 */
+    .config-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .config-tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #666;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.2s;
+    }
+    .config-tab:hover { color: #667eea; }
+    .config-tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+      font-weight: 500;
+    }
+    .config-panel { display: none; }
+    .config-panel.active { display: block; }
+
+    /* 同步结果 */
+    .sync-result {
+      background: #f6ffed;
+      border: 1px solid #b7eb8f;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      display: none;
+    }
+    .sync-result.show { display: block; }
+    .sync-result h4 {
+      color: #389e0d;
+      margin-bottom: 12px;
+    }
+    .sync-result-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 13px;
+      border-bottom: 1px dashed #e0e0e0;
+    }
+    .sync-result-item:last-child { border-bottom: none; }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { padding: 16px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-icon">📅</div>
+      <div class="header-title">日历同步管理后台</div>
+    </div>
+    <div class="header-right">
+      <span class="status-dot"></span>
+      <span class="status-text" id="statusText">服务运行中</span>
+      <button class="btn-logout" onclick="logout()">退出登录</button>
+    </div>
+  </div>
+
+  <!-- 布局 -->
+  <div class="layout">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+      <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+        <span class="nav-icon">📊</span>
+        <span>仪表盘</span>
+      </div>
+      <div class="nav-item" onclick="location.href='/custom.html'">
+        <span class="nav-icon">📋</span>
+        <span>自定义事件</span>
+      </div>
+      <div class="nav-item" data-page="config" onclick="switchPage('config')">
+        <span class="nav-icon">⚙️</span>
+        <span>同步配置</span>
+      </div>
+      <div class="nav-item" data-page="logs" onclick="switchPage('logs')">
+        <span class="nav-icon">📝</span>
+        <span>同步日志</span>
+      </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="main">
+      <!-- 仪表盘 -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-icon">📚</span>
+            <div class="stat-label">喜鹊儿课表</div>
+            <div class="stat-value small" id="statXiqueer">未启用</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">✅</span>
+            <div class="stat-label">企业微信待办</div>
+            <div class="stat-value small" id="statWecom">未启用</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">📅</span>
+            <div class="stat-label">日历服务</div>
+            <div class="stat-value small" id="statCalendar">未配置</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">⏰</span>
+            <div class="stat-label">同步周期</div>
+            <div class="stat-value small" id="statCron">-</div>
+          </div>
+          <div class="stat-card" onclick="location.href='/custom.html'" style="cursor:pointer">
+            <span class="stat-icon">📋</span>
+            <div class="stat-label">自定义事件</div>
+            <div class="stat-value small" id="statCustom">0 事件 / 0 待办</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>同步状态</span>
+            <span class="badge" id="syncStatusBadge">未同步</span>
+          </div>
+          <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+              <div style="font-size: 13px; color: #999; margin-bottom: 6px;">上次同步</div>
+              <div style="font-size: 15px; color: #333;" id="lastSyncTime">从未同步</div>
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+              <div style="font-size: 13px; color: #999; margin-bottom: 6px;">同步状态</div>
+              <div style="font-size: 15px; color: #333;" id="syncState">空闲</div>
+            </div>
+          </div>
+          <div style="margin-top: 20px; display: flex; gap: 12px;">
+            <button class="btn btn-primary" onclick="triggerSync()" id="btnSync">
+              🔄 立即同步
+            </button>
+            <button class="btn btn-secondary" onclick="testConnections()" id="btnTest">
+              🧪 测试连接
+            </button>
+          </div>
+          <div class="sync-result" id="syncResult"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>最近同步详情</span>
+          </div>
+          <div id="syncDetails" style="font-size: 13px; color: #666;">
+            暂无同步记录
+          </div>
+        </div>
+      </div>
+
+      <!-- 配置页面 -->
+      <div class="page" id="page-config">
+        <div class="card">
+          <div class="card-title">
+            <span>同步配置</span>
+          </div>
+
+          <div class="config-tabs">
+            <div class="config-tab active" data-tab="xiqueer" onclick="switchConfigTab('xiqueer')">📚 喜鹊儿课表</div>
+            <div class="config-tab" data-tab="wecom" onclick="switchConfigTab('wecom')">✅ 企业微信</div>
+            <div class="config-tab" data-tab="caldav" onclick="switchConfigTab('caldav')">📡 CalDAV</div>
+            <div class="config-tab" data-tab="graph" onclick="switchConfigTab('graph')">📅 Exchange</div>
+            <div class="config-tab" data-tab="general" onclick="switchConfigTab('general')">⚙️ 通用设置</div>
+          </div>
+
+          <!-- 喜鹊儿配置 -->
+          <div class="config-panel active" id="panel-xiqueer">
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="icon">📚</span>
+                喜鹊儿课表同步
+                <label class="switch" style="margin-left: auto;">
+                  <input type="checkbox" id="xiqueerEnabled" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>账号（学号/工号）<span class="required">*</span></label>
+                  <input type="text" id="xiqueerUsername" placeholder="请输入喜鹊儿登录账号">
+                </div>
+                <div class="form-group">
+                  <label>密码<span class="required">*</span></label>
+                  <input type="password" id="xiqueerPassword" placeholder="请输入喜鹊儿登录密码">
+                </div>
+                <div class="form-group">
+                  <label>学校名称<span class="required">*</span></label>
+                  <input type="text" id="xiqueerSchool" placeholder="请输入学校全称">
+                  <span class="tip">需与喜鹊儿APP中显示的学校名称一致</span>
+                </div>
+                <div class="form-group">
+                  <label>日历名称</label>
+                  <input type="text" id="xiqueerCalendarName" placeholder="课程表">
+                  <span class="tip">在Exchange日历中显示的名称</span>
+                </div>
+                <div class="form-group">
+                  <label>提前获取天数</label>
+                  <input type="number" id="xiqueerDaysAhead" value="14" min="1" max="90">
+                  <span class="tip">默认获取未来14天的课表</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 企业微信配置 -->
+          <div class="config-panel" id="panel-wecom">
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="icon">✅</span>
+                企业微信待办同步
+                <label class="switch" style="margin-left: auto;">
+                  <input type="checkbox" id="wecomEnabled" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>企业ID (CorpId)<span class="required">*</span></label>
+                  <input type="text" id="wecomCorpId" placeholder="请输入企业ID">
+                </div>
+                <div class="form-group">
+                  <label>应用Secret<span class="required">*</span></label>
+                  <input type="password" id="wecomSecret" placeholder="请输入应用Secret">
+                </div>
+                <div class="form-group">
+                  <label>应用AgentId</label>
+                  <input type="text" id="wecomAgentId" placeholder="请输入AgentId">
+                </div>
+                <div class="form-group">
+                  <label>待办日历名称</label>
+                  <input type="text" id="wecomCalendarName" placeholder="企业待办">
+                </div>
+                <div class="form-group">
+                  <label>同步用户ID</label>
+                  <input type="text" id="wecomUserIds" placeholder="多个用逗号分隔">
+                  <span class="tip">企业微信成员的UserId，多个用英文逗号分隔</span>
+                </div>
+                <div class="form-group">
+                  <label>待办默认时长（分钟）</label>
+                  <input type="number" id="wecomTodoDuration" value="60" min="15" max="480">
+                  <span class="tip">无截止时间的待办在日历中占多长时间</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CalDAV 配置 -->
+          <div class="config-panel" id="panel-caldav">
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="icon">📡</span>
+                CalDAV 日历服务
+                <label class="switch" style="margin-left: auto;">
+                  <input type="checkbox" id="caldavEnabled">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>服务器地址<span class="required">*</span></label>
+                  <input type="text" id="caldavServerUrl" placeholder="http://localhost:5232/">
+                  <span class="tip">CalDAV 服务器根地址，如 Radicale 默认地址</span>
+                </div>
+                <div class="form-group">
+                  <label>用户名<span class="required">*</span></label>
+                  <input type="text" id="caldavUsername" placeholder="admin">
+                </div>
+                <div class="form-group">
+                  <label>密码<span class="required">*</span></label>
+                  <input type="password" id="caldavPassword" placeholder="请输入密码">
+                </div>
+                <div class="form-group">
+                  <label>默认日历名称</label>
+                  <input type="text" id="caldavDefaultCalendar" placeholder="calendar">
+                  <span class="tip">同步到的日历集合名称</span>
+                </div>
+              </div>
+              <div style="margin-top: 16px; padding: 12px; background: #f6ffed; border-radius: 6px; font-size: 12px; color: #52c41a;">
+                💡 <strong>推荐方案：</strong>使用 Docker 部署的 Radicale 作为 CalDAV 服务器，iOS 日历可直接订阅 CalDAV 账号。
+                <br>iOS 设置方法：设置 → 日历 → 账户 → 添加账户 → 其他 → 添加 CalDAV 账户
+              </div>
+            </div>
+          </div>
+
+          <!-- Exchange 配置 -->
+          <div class="config-panel" id="panel-graph">
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="icon">📅</span>
+                Microsoft Exchange / Outlook
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>API 类型</label>
+                  <select id="msGraphApiType">
+                    <option value="graph">Microsoft Graph (Microsoft 365)</option>
+                    <option value="ews">Exchange Web Services (本地Exchange)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>目标邮箱<span class="required">*</span></label>
+                  <input type="email" id="msGraphUserEmail" placeholder="your@email.com">
+                  <span class="tip">要同步到的日历所属邮箱</span>
+                </div>
+              </div>
+
+              <div id="graphConfig">
+                <div class="form-section-title" style="margin-top: 20px;">
+                  <span class="icon">🔑</span>
+                  Azure AD 应用配置
+                </div>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>客户端ID (Client ID)<span class="required">*</span></label>
+                    <input type="text" id="msGraphClientId" placeholder="应用程序(客户端) ID">
+                  </div>
+                  <div class="form-group">
+                    <label>客户端密钥<span class="required">*</span></label>
+                    <input type="password" id="msGraphClientSecret" placeholder="客户端密钥值">
+                  </div>
+                  <div class="form-group">
+                    <label>租户ID (Tenant ID)<span class="required">*</span></label>
+                    <input type="text" id="msGraphTenantId" placeholder="目录(租户) ID">
+                  </div>
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: #f0f5ff; border-radius: 6px; font-size: 12px; color: #666;">
+                  💡 需要在 Azure AD 中注册应用并授予 Calendars.ReadWrite 应用权限。
+                  <a href="https://learn.microsoft.com/zh-cn/graph/auth-v2-service" target="_blank" style="color: #667eea;">查看文档</a>
+                </div>
+              </div>
+
+              <div id="ewsConfig" style="display: none;">
+                <div class="form-section-title" style="margin-top: 20px;">
+                  <span class="icon">🖥️</span>
+                  Exchange Server 配置
+                </div>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>服务器地址</label>
+                    <input type="text" id="exchangeServerUrl" placeholder="https://exchange.yourcompany.com/EWS/Exchange.asmx">
+                  </div>
+                  <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="exchangeUsername" placeholder="域\用户名 或 邮箱">
+                  </div>
+                  <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="exchangePassword" placeholder="请输入密码">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 通用设置 -->
+          <div class="config-panel" id="panel-general">
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="icon">🎯</span>
+                同步目标
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>同步目标服务</label>
+                  <select id="syncTarget">
+                    <option value="caldav">CalDAV（推荐，自建服务器）</option>
+                    <option value="graph">Microsoft Exchange / Outlook</option>
+                  </select>
+                  <span class="tip">选择要将事件同步到哪个日历服务</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="icon">⏰</span>
+                同步调度
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>同步周期 (Cron 表达式)</label>
+                  <input type="text" id="syncCron" value="0 * * * *">
+                  <span class="tip">默认每小时一次。如：0 */30 * * * * 为每30分钟</span>
+                </div>
+                <div class="form-group">
+                  <label>时区</label>
+                  <input type="text" id="timezone" value="Asia/Shanghai">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="icon">🔐</span>
+                管理密码
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>当前密码</label>
+                  <input type="password" id="oldPassword" placeholder="请输入当前密码">
+                </div>
+                <div class="form-group">
+                  <label>新密码</label>
+                  <input type="password" id="newPassword" placeholder="至少6位">
+                </div>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="changePassword()" style="margin-top: 12px;">
+                修改密码
+              </button>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-secondary" onclick="loadConfig()">重置</button>
+            <button class="btn btn-primary" onclick="saveConfig()" id="btnSaveConfig">
+              💾 保存配置
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 日志页面 -->
+      <div class="page" id="page-logs">
+        <div class="card">
+          <div class="card-title">
+            <span>同步日志</span>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="loadLogs()">🔄 刷新</button>
+              <button class="btn btn-danger btn-sm" onclick="clearLogs()">🗑️ 清空</button>
+            </div>
+          </div>
+          <div class="log-toolbar">
+            <select id="logType" onchange="loadLogs()">
+              <option value="combined">全部日志</option>
+              <option value="error">仅错误日志</option>
+            </select>
+            <select id="logLines" onchange="loadLogs()">
+              <option value="50">最近50行</option>
+              <option value="100" selected>最近100行</option>
+              <option value="200">最近200行</option>
+              <option value="500">最近500行</option>
+            </select>
+          </div>
+          <div class="log-container" id="logContainer">
+            <div class="log-line" style="color: #6c7086;">加载中...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ========== 工具函数 ==========
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    async function api(url, options = {}) {
+      const res = await fetch(url, {
+        headers: { 'Content-Type': 'application/json', ...options.headers },
+        ...options,
+      });
+
+      if (res.status === 401) {
+        window.location.href = '/login.html';
+        return null;
+      }
+
+      return res.json();
+    }
+
+    // ========== 页面切换 ==========
+
+    function switchPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById(`page-${page}`).classList.add('active');
+      document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+
+      if (page === 'dashboard') {
+        loadStatus();
+      } else if (page === 'config') {
+        loadConfig();
+      } else if (page === 'logs') {
+        loadLogs();
+      }
+    }
+
+    function switchConfigTab(tab) {
+      document.querySelectorAll('.config-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector(`.config-tab[data-tab="${tab}"]`).classList.add('active');
+      document.getElementById(`panel-${tab}`).classList.add('active');
+    }
+
+    // ========== 登出 ==========
+
+    async function logout() {
+      await api('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login.html';
+    }
+
+    // ========== 仪表盘 ==========
+
+    async function loadStatus() {
+      const data = await api('/api/sync/status');
+      if (!data || !data.success) return;
+
+      const sync = data.sync;
+      const sched = data.scheduler;
+
+      // 服务状态
+      const statusText = document.getElementById('statusText');
+      const statusDot = document.querySelector('.status-dot');
+      if (sched.isRunning) {
+        statusText.textContent = '服务运行中';
+        statusDot.style.background = '#52c41a';
+      } else {
+        statusText.textContent = '服务未运行';
+        statusDot.style.background = '#ff4d4f';
+      }
+
+      // 统计卡片
+      document.getElementById('statXiqueer').textContent =
+        sync.services.xiqueer.enabled ? '已启用' : '未启用';
+      document.getElementById('statWecom').textContent =
+        sync.services.wecom.enabled ? '已启用' : '未启用';
+      
+      // 日历服务状态
+      const calStatEl = document.getElementById('statCalendar');
+      if (sync.services.caldav?.enabled) {
+        calStatEl.textContent = 'CalDAV 已连接';
+      } else if (sync.services.msGraph?.enabled) {
+        calStatEl.textContent = 'Exchange 已连接';
+      } else {
+        calStatEl.textContent = '未配置';
+      }
+      document.getElementById('statCron').textContent = sync.syncCron || '-';
+
+      // 自定义事件统计
+      const statCustom = document.getElementById('statCustom');
+      if (statCustom && sync.services.custom) {
+        statCustom.textContent = `${sync.services.custom.events} 事件 / ${sync.services.custom.todos} 待办`;
+      }
+
+      // 同步状态
+      const badge = document.getElementById('syncStatusBadge');
+      if (sync.isSyncing) {
+        badge.textContent = '同步中';
+        badge.className = 'badge';
+      } else if (sync.lastSyncResult) {
+        badge.textContent = '已同步';
+        badge.className = 'badge green';
+      } else {
+        badge.textContent = '未同步';
+        badge.className = 'badge gray';
+      }
+
+      // 上次同步时间
+      document.getElementById('lastSyncTime').textContent =
+        sync.lastSyncTime ? new Date(sync.lastSyncTime).toLocaleString('zh-CN') : '从未同步';
+
+      // 同步状态文字
+      document.getElementById('syncState').textContent =
+        sync.isSyncing ? '正在同步...' : '空闲';
+
+      // 同步详情
+      const details = document.getElementById('syncDetails');
+      if (sync.lastSyncResult && sync.lastSyncResult.results) {
+        let html = '';
+        const results = sync.lastSyncResult.results;
+        const nameMap = { xiqueer: '喜鹊儿课表', wecom: '企业微信待办', custom: '自定义事件' };
+        for (const [key, val] of Object.entries(results)) {
+          const name = nameMap[key] || key;
+          if (val.success !== false) {
+            html += `<div style="padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+              <strong>${name}</strong>：新增 ${val.created || 0}，更新 ${val.updated || 0}，删除 ${val.deleted || 0}，跳过 ${val.skipped || 0}
+            </div>`;
+          } else {
+            html += `<div style="padding: 8px 0; border-bottom: 1px solid #f0f0f0; color: #ff4d4f;">
+              <strong>${name}</strong>：同步失败 - ${val.error || '未知错误'}
+            </div>`;
+          }
+        }
+        details.innerHTML = html || '暂无同步记录';
+      }
+    }
+
+    async function triggerSync() {
+      const btn = document.getElementById('btnSync');
+      btn.disabled = true;
+      btn.textContent = '同步中...';
+
+      try {
+        const data = await api('/api/sync/trigger', { method: 'POST' });
+        if (data && data.success) {
+          showToast('同步完成', 'success');
+          loadStatus();
+
+          // 显示同步结果
+          const resultDiv = document.getElementById('syncResult');
+          let html = '<h4>✅ 同步完成</h4>';
+          const results = data.result.results;
+          const nameMap2 = { xiqueer: '喜鹊儿课表', wecom: '企业微信待办', custom: '自定义事件' };
+          for (const [key, val] of Object.entries(results)) {
+            const name = nameMap2[key] || key;
+            if (val.success !== false) {
+              html += `<div class="sync-result-item">
+                <span>${name}</span>
+                <span>新增 ${val.created || 0} / 更新 ${val.updated || 0} / 删除 ${val.deleted || 0}</span>
+              </div>`;
+            } else {
+              html += `<div class="sync-result-item" style="color: #ff4d4f;">
+                <span>${name}</span>
+                <span>失败: ${val.error || '未知错误'}</span>
+              </div>`;
+            }
+          }
+          resultDiv.innerHTML = html;
+          resultDiv.classList.add('show');
+        } else {
+          showToast(data?.error || '同步失败', 'error');
+        }
+      } catch (err) {
+        showToast('网络错误', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔄 立即同步';
+      }
+    }
+
+    async function testConnections() {
+      const btn = document.getElementById('btnTest');
+      btn.disabled = true;
+      btn.textContent = '测试中...';
+
+      try {
+        const data = await api('/api/sync/test', { method: 'POST' });
+        if (data && data.success) {
+          let msg = [];
+          const testNameMap = { xiqueer: '喜鹊儿', wecom: '企业微信', msGraph: 'Exchange', caldav: 'CalDAV', custom: '自定义事件' };
+          for (const [key, val] of Object.entries(data.results)) {
+            const name = testNameMap[key] || key;
+            msg.push(`${name}: ${val.success ? '✅ 连接成功' : '❌ ' + val.error}`);
+          }
+          alert('连接测试结果：\n\n' + msg.join('\n'));
+        }
+      } catch (err) {
+        showToast('网络错误', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🧪 测试连接';
+      }
+    }
+
+    // ========== 配置页面 ==========
+
+    async function loadConfig() {
+      const data = await api('/api/config');
+      if (!data || !data.success) return;
+
+      const cfg = data.config;
+
+      // 喜鹊儿
+      document.getElementById('xiqueerUsername').value = cfg.xiqueer.username || '';
+      document.getElementById('xiqueerPassword').value = cfg.xiqueer.password || '';
+      document.getElementById('xiqueerSchool').value = cfg.xiqueer.school || '';
+      document.getElementById('xiqueerCalendarName').value = cfg.xiqueer.calendarName || '';
+      document.getElementById('xiqueerDaysAhead').value = cfg.xiqueer.daysAhead || 14;
+      document.getElementById('xiqueerEnabled').checked = cfg.xiqueer.enabled;
+
+      // 企业微信
+      document.getElementById('wecomCorpId').value = cfg.wecom.corpId || '';
+      document.getElementById('wecomSecret').value = cfg.wecom.secret || '';
+      document.getElementById('wecomAgentId').value = cfg.wecom.agentId || '';
+      document.getElementById('wecomCalendarName').value = cfg.wecom.calendarName || '';
+      document.getElementById('wecomUserIds').value = (cfg.wecom.userIds || []).join(', ');
+      document.getElementById('wecomTodoDuration').value = cfg.wecom.todoDuration || 60;
+      document.getElementById('wecomEnabled').checked = cfg.wecom.enabled;
+
+      // CalDAV
+      document.getElementById('caldavEnabled').checked = cfg.caldav?.enabled || false;
+      document.getElementById('caldavServerUrl').value = cfg.caldav?.serverUrl || '';
+      document.getElementById('caldavUsername').value = cfg.caldav?.username || '';
+      document.getElementById('caldavPassword').value = cfg.caldav?.password || '';
+      document.getElementById('caldavDefaultCalendar').value = cfg.caldav?.defaultCalendar || 'calendar';
+
+      // Graph
+      document.getElementById('msGraphApiType').value = cfg.msGraph.apiType || 'graph';
+      document.getElementById('msGraphUserEmail').value = cfg.msGraph.userEmail || '';
+      document.getElementById('msGraphClientId').value = cfg.msGraph.clientId || '';
+      document.getElementById('msGraphClientSecret').value = cfg.msGraph.clientSecret || '';
+      document.getElementById('msGraphTenantId').value = cfg.msGraph.tenantId || '';
+      document.getElementById('exchangeServerUrl').value = cfg.msGraph.exchangeServerUrl || '';
+      document.getElementById('exchangeUsername').value = cfg.msGraph.exchangeUsername || '';
+      document.getElementById('exchangePassword').value = cfg.msGraph.exchangePassword || '';
+
+      toggleGraphConfig();
+
+      // 通用
+      document.getElementById('syncTarget').value = cfg.syncTarget || 'caldav';
+      document.getElementById('syncCron').value = cfg.syncCron || '0 * * * *';
+      document.getElementById('timezone').value = cfg.timezone || 'Asia/Shanghai';
+    }
+
+    async function saveConfig() {
+      const btn = document.getElementById('btnSaveConfig');
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+
+      const config = {
+        xiqueer: {
+          enabled: document.getElementById('xiqueerEnabled').checked,
+          username: document.getElementById('xiqueerUsername').value,
+          password: document.getElementById('xiqueerPassword').value,
+          school: document.getElementById('xiqueerSchool').value,
+          calendarName: document.getElementById('xiqueerCalendarName').value,
+          daysAhead: parseInt(document.getElementById('xiqueerDaysAhead').value, 10),
+        },
+        wecom: {
+          enabled: document.getElementById('wecomEnabled').checked,
+          corpId: document.getElementById('wecomCorpId').value,
+          secret: document.getElementById('wecomSecret').value,
+          agentId: document.getElementById('wecomAgentId').value,
+          calendarName: document.getElementById('wecomCalendarName').value,
+          userIds: document.getElementById('wecomUserIds').value,
+          todoDuration: parseInt(document.getElementById('wecomTodoDuration').value, 10),
+        },
+        caldav: {
+          enabled: document.getElementById('caldavEnabled').checked,
+          serverUrl: document.getElementById('caldavServerUrl').value,
+          username: document.getElementById('caldavUsername').value,
+          password: document.getElementById('caldavPassword').value,
+          defaultCalendar: document.getElementById('caldavDefaultCalendar').value,
+        },
+        msGraph: {
+          apiType: document.getElementById('msGraphApiType').value,
+          userEmail: document.getElementById('msGraphUserEmail').value,
+          clientId: document.getElementById('msGraphClientId').value,
+          clientSecret: document.getElementById('msGraphClientSecret').value,
+          tenantId: document.getElementById('msGraphTenantId').value,
+          exchangeServerUrl: document.getElementById('exchangeServerUrl').value,
+          exchangeUsername: document.getElementById('exchangeUsername').value,
+          exchangePassword: document.getElementById('exchangePassword').value,
+        },
+        syncTarget: document.getElementById('syncTarget').value,
+        syncCron: document.getElementById('syncCron').value,
+        timezone: document.getElementById('timezone').value,
+      };
+
+      try {
+        const data = await api('/api/config', {
+          method: 'POST',
+          body: JSON.stringify(config),
+        });
+
+        if (data && data.success) {
+          showToast('配置保存成功', 'success');
+          loadConfig(); // 重新加载以更新掩码显示
+        } else {
+          showToast(data?.error || '保存失败', 'error');
+        }
+      } catch (err) {
+        showToast('网络错误', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 保存配置';
+      }
+    }
+
+    async function changePassword() {
+      const oldPwd = document.getElementById('oldPassword').value;
+      const newPwd = document.getElementById('newPassword').value;
+
+      if (!oldPwd || !newPwd) {
+        showToast('请填写完整密码信息', 'error');
+        return;
+      }
+
+      if (newPwd.length < 6) {
+        showToast('新密码至少6位', 'error');
+        return;
+      }
+
+      try {
+        const data = await api('/api/auth/password', {
+          method: 'POST',
+          body: JSON.stringify({ oldPassword: oldPwd, newPassword: newPwd }),
+        });
+
+        if (data && data.success) {
+          showToast('密码修改成功', 'success');
+          document.getElementById('oldPassword').value = '';
+          document.getElementById('newPassword').value = '';
+        } else {
+          showToast(data?.error || '修改失败', 'error');
+        }
+      } catch (err) {
+        showToast('网络错误', 'error');
+      }
+    }
+
+    function toggleGraphConfig() {
+      const type = document.getElementById('msGraphApiType').value;
+      document.getElementById('graphConfig').style.display = type === 'graph' ? 'block' : 'none';
+      document.getElementById('ewsConfig').style.display = type === 'ews' ? 'block' : 'none';
+    }
+
+    document.getElementById('msGraphApiType').addEventListener('change', toggleGraphConfig);
+
+    // ========== 日志页面 ==========
+
+    async function loadLogs() {
+      const type = document.getElementById('logType').value;
+      const lines = document.getElementById('logLines').value;
+
+      const data = await api(`/api/logs?type=${type}&lines=${lines}`);
+      const container = document.getElementById('logContainer');
+
+      if (!data || !data.success) {
+        container.innerHTML = '<div class="log-line" style="color: #f38ba8;">加载失败</div>';
+        return;
+      }
+
+      if (data.logs.length === 0) {
+        container.innerHTML = '<div class="log-line" style="color: #6c7086;">暂无日志</div>';
+        return;
+      }
+
+      container.innerHTML = data.logs.map(line => {
+        // 简单的颜色解析
+        let levelClass = 'level-info';
+        if (line.includes('[ERROR]')) levelClass = 'level-error';
+        else if (line.includes('[WARN]')) levelClass = 'level-warn';
+        else if (line.includes('[DEBUG]')) levelClass = 'level-debug';
+
+        return `<div class="log-line"><span class="${levelClass}">${escapeHtml(line)}</span></div>`;
+      }).join('');
+    }
+
+    async function clearLogs() {
+      if (!confirm('确定要清空所有日志吗？')) return;
+
+      const data = await api('/api/logs', { method: 'DELETE' });
+      if (data && data.success) {
+        showToast('日志已清空', 'success');
+        loadLogs();
+      } else {
+        showToast('清空失败', 'error');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ========== 初始化 ==========
+
+    // 页面加载时加载状态
+    loadStatus();
+
+    // 每30秒刷新一次状态
+    setInterval(() => {
+      if (document.getElementById('page-dashboard').classList.contains('active')) {
+        loadStatus();
+      }
+    }, 30000);
+  </script>
+</body>
+</html>
