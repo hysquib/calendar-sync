@@ -327,8 +327,12 @@
         <button class="btn btn-primary" onclick="openJwxt()">
           🌐 打开教务系统
         </button>
+        <button class="btn btn-success" onclick="openSchedulePage()" style="margin-left:8px">
+          📋 直接打开课表页
+        </button>
         <p style="margin-top: 12px; color: #999; font-size: 12px;">
-          提示：登录后请导航到<strong>课表页面</strong>（个人课表/周课表），然后再进行下一步
+          先用「打开教务系统」登录，登录成功后再用「直接打开课表页」打开课表页面。<br>
+          <strong>注意：必须在校园网环境下操作。</strong>
         </p>
       </div>
     </div>
@@ -420,7 +424,23 @@
       }
 
       const snippet = `(function(){
+  // 尝试抓取 iframe 内的内容（青果教务系统课表在 iframe 里）
   var html = document.documentElement.outerHTML;
+  try {
+    var iframes = document.getElementsByTagName('iframe');
+    for (var i = 0; i < iframes.length; i++) {
+      try {
+        var iframeDoc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+        if (iframeDoc && iframeDoc.body) {
+          var iframeHtml = iframeDoc.documentElement.outerHTML;
+          if (iframeHtml && iframeHtml.length > 500) {
+            html = iframeHtml;
+            break;
+          }
+        }
+      } catch(e) {}
+    }
+  } catch(e) {}
   var cookies = document.cookie;
   var data = {
     token: '${token}',
@@ -461,6 +481,18 @@
       // 打开教务系统登录页
       const loginUrl = baseUrl + '/cas/login.action';
       window.open(loginUrl, '_blank');
+    }
+
+    // 直接打开课表页面（青果教务系统 iframe 内的课表页）
+    function openSchedulePage() {
+      const baseUrl = document.getElementById('baseUrlInput').value.trim();
+      if (!baseUrl) {
+        alert('请先填写教务系统地址');
+        return;
+      }
+      // 青果教务系统课表页面路径
+      const scheduleUrl = baseUrl + '/student/wsxk.kcbcx10319.html?menucode=S2020103';
+      window.open(scheduleUrl, '_blank');
     }
 
     // ========== 复制代码 ==========
