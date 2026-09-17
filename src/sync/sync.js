@@ -213,25 +213,26 @@ class SyncManager {
    */
   async syncJWXTSchedule() {
     const config = getConfig();
+    const fs = require('fs');
+    const path = require('path');
     logger.info('--- 开始同步教务系统课表 ---');
 
     let events = [];
 
     // 优先从缓存文件读取已导入的课表
     try {
-      const configManager = getConfigManager ? null : null;
-      const { getConfigManager } = require('../utils/configManager');
-      const cm = getConfigManager();
-      const dataDir = cm.getDataDir();
-      const cacheFile = require('path').join(dataDir, 'jwxt-schedule-cache.json');
+      const dataDir = '/app/data';
+      const cacheFile = path.join(dataDir, 'jwxt-schedule-cache.json');
       
-      if (require('fs').existsSync(cacheFile)) {
-        const cache = JSON.parse(require('fs').readFileSync(cacheFile, 'utf-8'));
+      if (fs.existsSync(cacheFile)) {
+        const cache = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
         events = cache.events || [];
         logger.info(`从缓存读取课表数据，共 ${events.length} 个事件`, {
           importedAt: cache.importedAt,
           semesterStart: cache.semesterStart,
         });
+      } else {
+        logger.warn('课表缓存文件不存在', { cacheFile });
       }
     } catch (cacheError) {
       logger.warn('读取课表缓存失败', { error: cacheError.message });
