@@ -162,6 +162,7 @@
         const data = await res.json();
 
         if (data.success) {
+          localStorage.setItem('auth_token', data.token);
           window.location.href = '/';
         } else {
           showError(data.error || '登录失败');

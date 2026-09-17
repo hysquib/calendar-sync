@@ -394,8 +394,7 @@
 
     // 获取当前认证 token
     function getToken() {
-      const match = document.cookie.match(/auth_token=([^;]+)/);
-      return match ? match[1] : '';
+      return localStorage.getItem('auth_token') || '';
     }
 
     // 获取服务器地址
