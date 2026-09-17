@@ -209,22 +209,57 @@ class SyncManager {
 
   /**
    * 同步教务系统课表
+   * 优先使用导入时缓存的课表数据，不依赖教务系统连接
    */
   async syncJWXTSchedule() {
     const config = getConfig();
     logger.info('--- 开始同步教务系统课表 ---');
 
-    // 先检查登录状态
-    if (!this.jwxtService.isLoggedIn) {
-      await this.jwxtService.init();
-      if (!this.jwxtService.isLoggedIn) {
-        throw new Error('教务系统未登录，请在管理后台重新登录');
+    let events = [];
+
+    // 优先从缓存文件读取已导入的课表
+    try {
+      const configManager = getConfigManager ? null : null;
+      const { getConfigManager } = require('../utils/configManager');
+      const cm = getConfigManager();
+      const dataDir = cm.getDataDir();
+      const cacheFile = require('path').join(dataDir, 'jwxt-schedule-cache.json');
+      
+      if (require('fs').existsSync(cacheFile)) {
+        const cache = JSON.parse(require('fs').readFileSync(cacheFile, 'utf-8'));
+        events = cache.events || [];
+        logger.info(`从缓存读取课表数据，共 ${events.length} 个事件`, {
+          importedAt: cache.importedAt,
+          semesterStart: cache.semesterStart,
+        });
+      }
+    } catch (cacheError) {
+      logger.warn('读取课表缓存失败', { error: cacheError.message });
+    }
+
+    // 如果缓存没有数据，尝试在线获取
+    if (events.length === 0 && this.jwxtService) {
+      try {
+        if (!this.jwxtService.isLoggedIn) {
+          await this.jwxtService.init();
+        }
+        if (this.jwxtService.isLoggedIn) {
+          events = await this.jwxtService.getCalendarEvents(config.jwxt.daysAhead || 14);
+          logger.info(`在线获取到 ${events.length} 条课表事件`);
+        } else {
+          logger.warn('教务系统未登录且无缓存数据，跳过课表同步');
+        }
+      } catch (onlineError) {
+        logger.warn('在线获取课表失败', { error: onlineError.message });
       }
     }
 
-    // 获取课表数据
-    const events = await this.jwxtService.getCalendarEvents(config.jwxt.daysAhead || 14);
-    logger.info(`获取到 ${events.length} 条课表事件`);
+    if (events.length === 0) {
+      logger.info('无课表数据可同步，跳过');
+      return { success: true, total: 0, created: 0, updated: 0, deleted: 0, skipped: 0, errors: 0, errorDetails: [], message: '无课表数据' };
+    }
+
+    logger.info(`准备同步 ${events.length} 条课表事件`);
 
     // 同步到日历
     const syncResult = await this.calendarService.syncEvents(

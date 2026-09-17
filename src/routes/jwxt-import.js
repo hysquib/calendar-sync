@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const cheerio = require('cheerio');
 const dayjs = require('dayjs');
+const fs = require('fs');
+const path = require('path');
 const logger = require('../utils/logger');
 const { verifyToken } = require('../utils/auth');
 const { getConfigManager } = require('../utils/configManager');
@@ -51,6 +53,24 @@ router.post('/schedule', async (req, res) => {
 
     // 转换为日历事件
     const events = courses.map(c => jwxtService.courseToEvent(c));
+
+    // 保存导入的课表数据到文件（供后续同步使用，不依赖教务系统连接）
+    try {
+      const configManager = getConfigManager();
+      const dataDir = configManager.getDataDir();
+      const scheduleFile = path.join(dataDir, 'jwxt-schedule-cache.json');
+      fs.writeFileSync(scheduleFile, JSON.stringify({
+        baseUrl: baseUrl || '',
+        username: username || '',
+        semesterStart: semesterStart || '2026-09-01',
+        importedAt: new Date().toISOString(),
+        courses: courses,
+        events: events,
+      }, null, 2), 'utf-8');
+      logger.info(`课表缓存已保存到 ${scheduleFile}，共 ${events.length} 个事件`);
+    } catch (cacheError) {
+      logger.warn('保存课表缓存失败', { error: cacheError.message });
+    }
 
     // 解析 cookie 字符串为 cookie 对象数组
     let cookieArr = [];
