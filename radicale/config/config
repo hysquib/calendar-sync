@@ -16,4 +16,4 @@ type = owner_only
 type = internal
 
 [logging]
-level = INFO
+level = info
