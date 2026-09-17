@@ -84,13 +84,15 @@ router.post('/schedule', async (req, res) => {
     // 保存 cookie（供后续同步使用）
     if (cookieArr.length > 0 && baseUrl) {
       jwxtService.saveCookies(cookieArr, baseUrl, username || '');
+    }
 
-      // 更新配置
+    // 始终更新配置并启用教务系统同步（不依赖 cookie，缓存数据已保存）
+    try {
       const configManager = getConfigManager();
       configManager.update({
         jwxt: {
           enabled: true,
-          baseUrl,
+          baseUrl: baseUrl || '',
           username: username || '',
           calendarName: '课程表',
           daysAhead: 14,
@@ -104,6 +106,8 @@ router.post('/schedule', async (req, res) => {
       } catch (e) {
         logger.warn('重新加载同步服务失败', { error: e.message });
       }
+    } catch (configErr) {
+      logger.warn('更新教务系统配置失败', { error: configErr.message });
     }
 
     logger.info(`课表导入完成，共 ${courses.length} 节课，${events.length} 个事件`);

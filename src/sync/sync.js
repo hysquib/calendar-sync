@@ -136,16 +136,12 @@ class SyncManager {
         results.xiqueer = { success: false, error: '未配置' };
       }
 
-      // 同步教务系统课表
-      if (this.jwxtService) {
-        try {
-          results.jwxt = await this.syncJWXTSchedule();
-        } catch (error) {
-          logger.error('教务系统课表同步失败', { error: error.message });
-          results.jwxt = { success: false, error: error.message };
-        }
-      } else {
-        results.jwxt = { success: false, error: '未配置' };
+      // 同步教务系统课表（优先使用缓存数据，不依赖在线连接）
+      try {
+        results.jwxt = await this.syncJWXTSchedule();
+      } catch (error) {
+        logger.error('教务系统课表同步失败', { error: error.message });
+        results.jwxt = { success: false, error: error.message };
       }
 
       // 同步企业微信待办
@@ -245,7 +241,7 @@ class SyncManager {
           await this.jwxtService.init();
         }
         if (this.jwxtService.isLoggedIn) {
-          events = await this.jwxtService.getCalendarEvents(config.jwxt.daysAhead || 14);
+          events = await this.jwxtService.getCalendarEvents(config.jwxt?.daysAhead || 14);
           logger.info(`在线获取到 ${events.length} 条课表事件`);
         } else {
           logger.warn('教务系统未登录且无缓存数据，跳过课表同步');
@@ -264,7 +260,7 @@ class SyncManager {
 
     // 同步到日历
     const syncResult = await this.calendarService.syncEvents(
-      config.jwxt.calendarName || '课程表',
+      config.jwxt?.calendarName || '课程表',
       events,
       'jwxt'
     );

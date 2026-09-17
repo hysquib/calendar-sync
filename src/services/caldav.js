@@ -327,7 +327,13 @@ END:VCALENDAR
   }
 
   _sanitizeName(name) {
-    return name.toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    // 对于含非 ASCII 字符的名称（如中文），使用 MD5 哈希生成 URL 安全的标识符
+    // 显示名称仍通过 MKCALENDAR 的 displayname 属性正确设置
+    if (/[^\x00-\x7F]/.test(name)) {
+      const crypto = require('crypto');
+      return crypto.createHash('md5').update(name, 'utf8').digest('hex').substring(0, 16);
+    }
+    return name.toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'calendar';
   }
 
   /**
