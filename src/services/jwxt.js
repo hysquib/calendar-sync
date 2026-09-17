@@ -261,83 +261,149 @@ class JWXTService {
     const courses = [];
     
     try {
-      const $ = cheerio.load(html);
-      
-      // 查找课表表格（不同学校页面结构可能不同，这里做多种尝试）
-      const $table = $('#kbgrid_table_0').length ? $('#kbgrid_table_0') : 
-                     $('.kbgrid_table').length ? $('.kbgrid_table') :
-                     $('table').has('td[rowspan]').first();
-      
-      if (!$table.length) {
-        logger.warn('未找到课表表格');
+      const $ = cheerio.load(html, { decodeEntities: true });
+
+      // 检查是否是框架页面（iframe），不是课表内容
+      const iframes = $('iframe');
+      if (iframes.length > 0 && !$('table').length) {
+        logger.warn('检测到这是框架页面，不是课表内容页面', { iframes: iframes.length });
         return courses;
       }
 
-      // 获取日期行（通常是第一行或第二行）
+      // 查找课表表格 — 多种选择器尝试
+      let $table = null;
+      const selectors = [
+        '#kbgrid_table_0',
+        '#kbgrid_table',
+        '.kbgrid_table',
+        '#1',
+        'table.kbtable',
+        'table[id*="kbgrid"]',
+        'table[id*="kb"]',
+        '#td0 > table',
+        'div.kbtable > table',
+        'div[id*="kb"] > table',
+      ];
+
+      for (const sel of selectors) {
+        if ($(sel).length) {
+          $table = $(sel).first();
+          logger.info('找到课表表格', { selector: sel, rows: $table.find('tr').length });
+          break;
+        }
+      }
+
+      // 如果上面的选择器没找到，找含有 rowspan 且行数 > 3 的最大表格
+      if (!$table || !$table.length) {
+        let bestTable = null;
+        let maxRows = 0;
+        $('table').each((i, tbl) => {
+          const $tbl = $(tbl);
+          const rows = $tbl.find('tr').length;
+          const hasRowspan = $tbl.find('td[rowspan]').length;
+          if (rows > maxRows && (hasRowspan > 0 || rows > 5)) {
+            maxRows = rows;
+            bestTable = $tbl;
+          }
+        });
+        if (bestTable) {
+          $table = bestTable;
+          logger.info('通过通用搜索找到可能的课表表格', { rows: maxRows });
+        }
+      }
+
+      if (!$table || !$table.length) {
+        // 记录所有表格信息用于调试
+        const allTables = $('table').map((i, t) => ({
+          idx: i,
+          id: $(t).attr('id') || '',
+          class: $(t).attr('class') || '',
+          rows: $(t).find('tr').length,
+        })).get();
+        logger.warn('未找到课表表格', { totalTables: allTables.length, tables: allTables.slice(0, 10) });
+        return courses;
+      }
+
+      // 获取日期行（在表头中查找）
       const dates = [];
-      $table.find('tr').first().find('th').each((i, th) => {
-        if (i > 0) { // 跳过第一列（节次列）
-          const text = $(th).text().trim();
-          // 提取日期（格式可能是"周一\n09-01"等）
+      $table.find('tr').each((rowIdx, tr) => {
+        if (rowIdx > 2) return; // 只看前3行
+        $(tr).find('th, td').each((i, cell) => {
+          const text = $(cell).text().trim();
+          // 匹配多种日期格式：09-01, 9月1日, 09/01, 周一 09-01 等
           const dateMatch = text.match(/(\d{1,2})[-\/月](\d{1,2})/);
-          if (dateMatch) {
+          if (dateMatch && !dates[i]) {
             const month = parseInt(dateMatch[1]);
             const day = parseInt(dateMatch[2]);
             const year = new Date().getFullYear();
-            dates.push(dayjs(`${year}-${month}-${day}`).format('YYYY-MM-DD'));
+            dates[i] = dayjs(`${year}-${month}-${day}`).format('YYYY-MM-DD');
           }
-        }
+        });
       });
+
+      logger.info('解析到日期列', { dates: dates.filter(d => d) });
+
+      // 如果没有找到日期，使用星期几（周一到周日）推算
+      if (dates.filter(d => d).length === 0) {
+        const today = dayjs();
+        const monday = today.subtract(today.day() - 1, 'day');
+        $table.find('tr').first().find('th, td').each((i, cell) => {
+          const text = $(cell).text().trim();
+          if (text.includes('周一') || text.includes('星期一')) dates[i] = monday.format('YYYY-MM-DD');
+          if (text.includes('周二') || text.includes('星期二')) dates[i] = monday.add(1, 'day').format('YYYY-MM-DD');
+          if (text.includes('周三') || text.includes('星期三')) dates[i] = monday.add(2, 'day').format('YYYY-MM-DD');
+          if (text.includes('周四') || text.includes('星期四')) dates[i] = monday.add(3, 'day').format('YYYY-MM-DD');
+          if (text.includes('周五') || text.includes('星期五')) dates[i] = monday.add(4, 'day').format('YYYY-MM-DD');
+          if (text.includes('周六') || text.includes('星期六')) dates[i] = monday.add(5, 'day').format('YYYY-MM-DD');
+          if (text.includes('周日') || text.includes('星期日') || text.includes('星期天')) dates[i] = monday.add(6, 'day').format('YYYY-MM-DD');
+        });
+      }
 
       // 遍历每一行（每一节）
       $table.find('tr').each((rowIdx, tr) => {
-        // 跳过表头行
-        if (rowIdx < 2) return;
+        if (rowIdx < 1) return; // 跳过表头行
 
         const $tr = $(tr);
-        let sectionInfo = $tr.find('td').first().text().trim();
-        let sectionMatch = sectionInfo.match(/第?(\d+)[节\-]/);
-        let sectionStart = sectionMatch ? parseInt(sectionMatch[1]) : rowIdx - 1;
+        const $cells = $tr.find('td');
+        let sectionInfo = $cells.first().text().trim();
+        let sectionMatch = sectionInfo.match(/第?(\d+)/);
+        let sectionStart = sectionMatch ? parseInt(sectionMatch[1]) : rowIdx;
 
-        let colOffset = 1; // 列偏移（因为有rowspan）
-
-        $tr.find('td').each((colIdx, td) => {
+        $cells.each((colIdx, td) => {
           if (colIdx === 0) return; // 跳过节次列
 
           const $td = $(td);
           const content = $td.html();
           
-          // 检查是否有课程（通常包含课程名）
+          if (!content || content.trim().length < 2) return;
+
+          // 检查是否有课程
           const courseName = this.extractCourseName(content);
           
           if (courseName) {
             const rowspan = parseInt($td.attr('rowspan')) || 1;
-            const dateIndex = colIdx - colOffset;
+            const dateIdx = colIdx;
             
-            if (dates[dateIndex]) {
-              courses.push({
-                date: dates[dateIndex],
-                section_start: sectionStart,
-                section_end: sectionStart + rowspan - 1,
-                course_name: courseName,
-                teacher: this.extractTeacher(content),
-                classroom: this.extractClassroom(content),
-                week: this.extractWeek(content),
-                raw: content,
-              });
-            }
-          }
+            const dateStr = dates[dateIdx] || '';
 
-          // 处理 rowspan 导致的列偏移
-          const colspan = parseInt($td.attr('colspan')) || 1;
-          if (colspan > 1) {
-            colOffset += colspan - 1;
+            courses.push({
+              date: dateStr || dayjs().format('YYYY-MM-DD'),
+              section_start: sectionStart,
+              section_end: sectionStart + rowspan - 1,
+              course_name: courseName,
+              teacher: this.extractTeacher(content),
+              classroom: this.extractClassroom(content),
+              week: this.extractWeek(content),
+              raw: content,
+            });
           }
         });
       });
 
+      logger.info(`课表解析完成，共 ${courses.length} 节课`);
+
     } catch (error) {
-      logger.error('解析课表 HTML 失败', { error: error.message });
+      logger.error('解析课表 HTML 失败', { error: error.message, stack: error.stack });
     }
 
     return courses;
