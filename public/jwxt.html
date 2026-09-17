@@ -362,21 +362,41 @@
     <div class="step-card">
       <div class="step-header">
         <div class="step-number">4</div>
-        <div class="step-title">备选方案：手动粘贴课表页面 HTML</div>
+        <div class="step-title">导入课表（手动方式）</div>
       </div>
       <div class="step-body">
-        <p style="margin-bottom: 12px; color: #666; font-size: 13px;">
-          如果控制台代码执行失败（如浏览器安全限制），可以在课表页面按 <kbd>F12</kbd>，
-          在 Console 输入 <code>document.documentElement.outerHTML</code>，
-          复制输出结果粘贴到下方：
+        <p style="margin-bottom: 16px; color: #666; font-size: 13px;">
+          如果控制台无法粘贴代码，可以用以下两种方式导入：
         </p>
-        <div class="form-group">
-          <label>课表页面 HTML</label>
-          <textarea id="htmlInput" rows="5" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:6px;font-family:monospace;font-size:12px;" placeholder="粘贴 document.documentElement.outerHTML 的输出结果..."></textarea>
+
+        <!-- 方式 A：上传 HTML 文件 -->
+        <div style="margin-bottom: 20px;">
+          <h4 style="font-size:14px;margin-bottom:8px;">方式 A：上传保存的 HTML 文件</h4>
+          <p style="color: #999; font-size: 12px; margin-bottom: 10px;">
+            在课表页面按 <kbd>Ctrl+S</kbd> 保存网页为 HTML 文件，然后上传：
+          </p>
+          <input type="file" id="htmlFileInput" accept=".html,.htm" style="margin-bottom: 10px;">
+          <button class="btn btn-primary" onclick="uploadFile()">
+            📤 上传文件导入
+          </button>
         </div>
-        <button class="btn btn-secondary" onclick="manualImport()">
-          📥 手动导入
-        </button>
+
+        <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 16px 0;">
+
+        <!-- 方式 B：手动粘贴 HTML -->
+        <div>
+          <h4 style="font-size:14px;margin-bottom:8px;">方式 B：手动粘贴 HTML</h4>
+          <p style="color: #999; font-size: 12px; margin-bottom: 10px;">
+            在课表页面按 <kbd>F12</kbd>，在 Console 输入 <code>document.documentElement.outerHTML</code>，
+            复制输出结果粘贴到下方：
+          </p>
+          <div class="form-group">
+            <textarea id="htmlInput" rows="5" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:6px;font-family:monospace;font-size:12px;" placeholder="粘贴 document.documentElement.outerHTML 的输出结果..."></textarea>
+          </div>
+          <button class="btn btn-secondary" onclick="manualImport()">
+            📥 手动导入
+          </button>
+        </div>
       </div>
     </div>
 
@@ -556,6 +576,60 @@
       } catch (err) {
         showResult({ success: false, error: err.message });
       }
+    }
+
+    // ========== 上传文件导入 ==========
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('htmlFileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('请先选择一个 HTML 文件');
+        return;
+      }
+
+      const baseUrl = document.getElementById('baseUrlInput').value.trim();
+      const username = document.getElementById('usernameInput').value.trim();
+      const token = getToken();
+
+      if (!baseUrl || !username) {
+        alert('请先填写教务系统地址和学号');
+        return;
+      }
+
+      // 读取文件内容
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const html = e.target.result;
+        if (!html || html.length < 100) {
+          alert('文件内容为空或太小，请确认保存的是课表页面');
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/jwxt-import/schedule', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token,
+              html,
+              cookies: '',
+              url: baseUrl,
+              baseUrl,
+              username,
+            }),
+          });
+          const data = await res.json();
+          showResult(data);
+        } catch (err) {
+          showResult({ success: false, error: err.message });
+        }
+      };
+      reader.onerror = function() {
+        alert('文件读取失败');
+      };
+      reader.readAsText(file, 'GBK');
     }
 
     // ========== 显示结果 ==========
