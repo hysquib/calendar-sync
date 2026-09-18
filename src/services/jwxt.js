@@ -556,16 +556,17 @@ class JWXTService {
   getCourseStartTime(section) {
     const schedule = {
       1: { hour: 8, minute: 0 },
-      2: { hour: 8, minute: 55 },
+      2: { hour: 8, minute: 50 },
       3: { hour: 10, minute: 0 },
-      4: { hour: 10, minute: 55 },
+      4: { hour: 10, minute: 50 },
       5: { hour: 14, minute: 0 },
-      6: { hour: 14, minute: 55 },
+      6: { hour: 14, minute: 50 },
       7: { hour: 16, minute: 0 },
-      8: { hour: 16, minute: 55 },
+      8: { hour: 16, minute: 50 },
       9: { hour: 19, minute: 0 },
-      10: { hour: 19, minute: 55 },
-      11: { hour: 20, minute: 50 },
+      10: { hour: 19, minute: 50 },
+      11: { hour: 20, minute: 40 },
+      12: { hour: 21, minute: 30 },
     };
     return schedule[section] || { hour: 8, minute: 0 };
   }
@@ -576,18 +577,19 @@ class JWXTService {
   getCourseEndTime(section) {
     const schedule = {
       1: { hour: 8, minute: 45 },
-      2: { hour: 9, minute: 40 },
+      2: { hour: 9, minute: 35 },
       3: { hour: 10, minute: 45 },
-      4: { hour: 11, minute: 40 },
+      4: { hour: 11, minute: 35 },
       5: { hour: 14, minute: 45 },
-      6: { hour: 15, minute: 40 },
+      6: { hour: 15, minute: 35 },
       7: { hour: 16, minute: 45 },
-      8: { hour: 17, minute: 40 },
+      8: { hour: 17, minute: 35 },
       9: { hour: 19, minute: 45 },
-      10: { hour: 20, minute: 40 },
-      11: { hour: 21, minute: 35 },
+      10: { hour: 20, minute: 35 },
+      11: { hour: 21, minute: 25 },
+      12: { hour: 21, minute: 35 },
     };
-    return schedule[section] || { hour: 9, minute: 40 };
+    return schedule[section] || { hour: 9, minute: 35 };
   }
 
   /**
