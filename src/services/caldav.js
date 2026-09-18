@@ -237,8 +237,9 @@ class CalDAVService {
       if (isAllDay) {
         return dayjs(d).format('YYYYMMDD');
       }
-      // 转成 UTC 格式
-      return dayjs(d).utc().format('YYYYMMDDTHHmmss') + 'Z';
+      // 使用 floating local time（不带 Z 后缀）
+      // iOS/CalDAV 客户端会按本地时区解析，避免 UTC 偏移问题
+      return dayjs(d).format('YYYYMMDDTHHmmss');
     };
 
     const dtStamp = dayjs().utc().format('YYYYMMDDTHHmmss') + 'Z';

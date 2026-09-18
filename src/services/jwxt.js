@@ -35,7 +35,7 @@ class JWXTService {
     this.cookieFile = null;
     this.isLoggedIn = false;
     // 学期开始日期（周一），用于将周次转换为实际日期
-    this.semesterStart = config.semesterStart || '2026-09-01';
+    this.semesterStart = config.semesterStart || '2026-09-07';
   }
 
   /**
