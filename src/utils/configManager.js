@@ -103,6 +103,7 @@ class ConfigManager {
         username: process.env.JWXT_USERNAME || '',
         calendarName: process.env.JWXT_CALENDAR_NAME || '课程表',
         daysAhead: parseInt(process.env.JWXT_DAYS_AHEAD, 10) || 14,
+        semesterStart: process.env.JWXT_SEMESTER_START || '2026-09-07',
       },
 
       // 同步目标配置

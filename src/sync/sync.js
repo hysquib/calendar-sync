@@ -206,6 +206,7 @@ class SyncManager {
   /**
    * 同步教务系统课表
    * 优先使用导入时缓存的课表数据，不依赖教务系统连接
+   * 使用当前配置中的 semesterStart 重新计算日期，确保日期正确
    */
   async syncJWXTSchedule() {
     const config = getConfig();
@@ -223,11 +224,28 @@ class SyncManager {
       
       if (fs.existsSync(cacheFile)) {
         const cache = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
-        events = cache.events || [];
-        logger.info(`从缓存读取课表数据，共 ${events.length} 个事件`, {
-          importedAt: cache.importedAt,
-          semesterStart: cache.semesterStart,
-        });
+        
+        // 使用当前配置中的 semesterStart 重新计算事件日期
+        // 这样即使导入时 semesterStart 错误，同步时也能用正确的日期
+        const semesterStart = config.jwxt?.semesterStart || cache.semesterStart || '2026-09-07';
+        
+        if (cache.courses && cache.courses.length > 0) {
+          // 从原始课程数据重新生成事件，使用正确的 semesterStart
+          const jwxtService = new JWXTService({ ...config.jwxt, semesterStart });
+          events = cache.courses.map(c => jwxtService.courseToEvent(c));
+          logger.info(`从缓存重新计算课表事件，共 ${events.length} 个`, {
+            semesterStart,
+            cacheSemesterStart: cache.semesterStart,
+            importedAt: cache.importedAt,
+          });
+        } else {
+          // 兼容旧缓存格式
+          events = cache.events || [];
+          logger.info(`从缓存读取课表数据，共 ${events.length} 个事件`, {
+            importedAt: cache.importedAt,
+            semesterStart: cache.semesterStart,
+          });
+        }
       } else {
         logger.warn('课表缓存文件不存在', { cacheFile });
       }

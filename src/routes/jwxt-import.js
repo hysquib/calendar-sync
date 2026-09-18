@@ -48,7 +48,7 @@ router.post('/schedule', async (req, res) => {
     logger.info('收到教务系统课表导入请求', { url, htmlLength: html.length, isMHTML: html.includes('MIME-Version') });
 
     // 解析课表 HTML
-    const jwxtService = new JWXTService({ baseUrl: baseUrl || '', username: username || '', semesterStart: semesterStart || '2026-09-01' });
+    const jwxtService = new JWXTService({ baseUrl: baseUrl || '', username: username || '', semesterStart: semesterStart || '2026-09-07' });
     const courses = jwxtService.parseScheduleHTML(html);
 
     // 转换为日历事件
@@ -62,7 +62,7 @@ router.post('/schedule', async (req, res) => {
       fs.writeFileSync(scheduleFile, JSON.stringify({
         baseUrl: baseUrl || '',
         username: username || '',
-        semesterStart: semesterStart || '2026-09-01',
+        semesterStart: semesterStart || '2026-09-07',
         importedAt: new Date().toISOString(),
         courses: courses,
         events: events,
@@ -141,7 +141,7 @@ router.post('/schedule', async (req, res) => {
  */
 router.get('/snippet', async (req, res) => {
   try {
-    const { token, baseUrl, username } = req.query;
+    const { token, baseUrl, username, semesterStart } = req.query;
 
     if (!token || !verifyToken(token)) {
       return res.status(401).json({ success: false, error: '认证失败' });
@@ -152,6 +152,8 @@ router.get('/snippet', async (req, res) => {
     const host = req.headers.host || 'localhost:3000';
     const serverUrl = `${protocol}://${host}`;
 
+    const ss = semesterStart || '2026-09-07';
+
     const snippet = `(function(){
   var html = document.documentElement.outerHTML;
   var cookies = document.cookie;
@@ -161,7 +163,8 @@ router.get('/snippet', async (req, res) => {
     cookies: cookies,
     url: window.location.href,
     baseUrl: '${baseUrl || ''}',
-    username: '${username || ''}'
+    username: '${username || ''}',
+    semesterStart: '${ss}'
   };
   fetch('${serverUrl}/api/jwxt-import/schedule', {
     method: 'POST',
