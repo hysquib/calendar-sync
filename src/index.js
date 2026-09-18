@@ -49,6 +49,11 @@ app.get('/health', (req, res) => {
           enabled: config.xiqueer?.enabled || false,
           calendarName: config.xiqueer?.calendarName || '课程表',
         },
+        jwxt: {
+          enabled: config.jwxt?.enabled || false,
+          baseUrl: config.jwxt?.baseUrl || '',
+          username: config.jwxt?.username || '',
+        },
         wecom: {
           enabled: config.wecom?.enabled || false,
           calendarName: config.wecom?.calendarName || '企业待办',
@@ -62,6 +67,11 @@ app.get('/health', (req, res) => {
           enabled: !!(config.msGraph?.clientId && config.msGraph?.userEmail),
           userEmail: config.msGraph?.userEmail || '',
           apiType: config.msGraph?.apiType || 'graph',
+        },
+        caldav: {
+          enabled: !!(config.caldav?.enabled && config.caldav?.serverUrl),
+          serverUrl: config.caldav?.serverUrl || '',
+          username: config.caldav?.username || '',
         },
       },
     },
@@ -82,7 +92,6 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
 // 管理后台 API（需要认证）
 app.use('/api', authMiddleware, adminRoutes);
 app.use('/api/browser', authMiddleware, browserRoutes);
-app.use('/api/jwxt', authMiddleware, browserRoutes);
 
 // 教务系统课表导入（跨域，内部验证 token）
 app.use('/api/jwxt-import', jwxtImportRoutes);
@@ -146,7 +155,7 @@ function startServer() {
     }
 
     logger.info('💡 默认管理密码: admin123');
-    logger.info('💡 iOS 设备请通过「设置 → 日历 → 账户 → 添加账户 → Exchange」添加 Microsoft 365 账户');
+    logger.info('💡 iOS 设备请通过「设置 → 日历 → 账户 → 添加账户 → 其他 → CalDAV 账户」添加');
   });
 
   // 优雅关闭

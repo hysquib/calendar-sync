@@ -133,6 +133,13 @@ class ConfigManager {
   }
 
   /**
+   * 获取配置（getAll 的别名）
+   */
+  getConfig() {
+    return this.config;
+  }
+
+  /**
    * 获取数据目录路径
    */
   getDataDir() {
@@ -145,11 +152,12 @@ class ConfigManager {
   getPublicConfig() {
     const config = JSON.parse(JSON.stringify(this.config));
 
-    // 隐藏敏感字段（显示前4后2位，中间用*代替）
+    // 隐藏敏感字段（显示前4后2位，中间用固定4个*代替）
+    // 固定使用 **** 确保与 _deepMerge 中的 includes('****') 检测匹配
     const mask = (str) => {
       if (!str) return '';
-      if (str.length <= 6) return '****';
-      return str.substring(0, 4) + '*'.repeat(str.length - 6) + str.substring(str.length - 2);
+      if (str.length <= 8) return '********';
+      return str.substring(0, 4) + '****' + str.substring(str.length - 2);
     };
 
     if (config.xiqueer) {
@@ -190,6 +198,12 @@ class ConfigManager {
     }
     if (this.config.wecom) {
       this.config.wecom.enabled = !!(this.config.wecom.corpId && this.config.wecom.secret);
+    }
+    if (this.config.jwxt) {
+      this.config.jwxt.enabled = !!(this.config.jwxt.baseUrl);
+    }
+    if (this.config.caldav) {
+      this.config.caldav.enabled = !!(this.config.caldav.serverUrl && this.config.caldav.username);
     }
 
     // userIds 可能是字符串，转成数组

@@ -217,7 +217,8 @@ class SyncManager {
 
     // 优先从缓存文件读取已导入的课表
     try {
-      const dataDir = '/app/data';
+      // 直接使用固定路径，避免循环依赖
+      const dataDir = path.join(process.cwd(), 'data');
       const cacheFile = path.join(dataDir, 'jwxt-schedule-cache.json');
       
       if (fs.existsSync(cacheFile)) {
@@ -326,6 +327,12 @@ class SyncManager {
         xiqueer: {
           enabled: !!(config.xiqueer.enabled && config.xiqueer.username),
           calendarName: config.xiqueer.calendarName,
+        },
+        jwxt: {
+          enabled: !!(config.jwxt?.enabled && config.jwxt?.baseUrl),
+          baseUrl: config.jwxt?.baseUrl,
+          username: config.jwxt?.username,
+          calendarName: config.jwxt?.calendarName || '课程表',
         },
         wecom: {
           enabled: !!(config.wecom.enabled && config.wecom.corpId),

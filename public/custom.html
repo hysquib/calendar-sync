@@ -5,113 +5,230 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>自定义事件 - 日历同步管理后台</title>
   <style>
+    :root {
+      --primary: #667eea;
+      --primary-dark: #764ba2;
+      --bg-gradient: linear-gradient(135deg, #667eea, #764ba2);
+      --bg-page: #f5f7fa;
+      --text-primary: #333;
+      --text-secondary: #555;
+      --text-muted: #999;
+      --border-color: #e0e0e0;
+      --border-light: #f0f0f0;
+      --bg-card: #fff;
+      --bg-hover: #f5f7fa;
+      --bg-active: #f0f2ff;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-btn: 0 4px 12px rgba(102, 126, 234, 0.35);
+      --success: #52c41a;
+      --error: #ff4d4f;
+      --info: #1890ff;
+      --warning: #fa8c16;
+      --sidebar-width: 220px;
+      --header-height: 56px;
+      --transition: 0.2s;
+      --font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #f5f7fa;
-      color: #333;
+      font-family: var(--font-stack);
+      background: var(--bg-page);
+      color: var(--text-primary);
     }
+
+    /* 顶部导航 */
     .header {
-      background: #fff;
-      border-bottom: 1px solid #e8e8e8;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
       padding: 0 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 56px;
+      height: var(--header-height);
       position: sticky; top: 0; z-index: 100;
     }
     .header-left { display: flex; align-items: center; gap: 12px; }
     .logo-icon {
       width: 36px; height: 36px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      border-radius: 8px;
+      background: var(--bg-gradient);
+      border-radius: var(--radius-md);
       display: flex; align-items: center; justify-content: center;
       color: white; font-size: 18px;
     }
     .header-title { font-size: 17px; font-weight: 600; }
     .header-right { display: flex; align-items: center; gap: 16px; }
-    .btn-logout {
-      padding: 6px 14px; border: 1px solid #e0e0e0; background: #fff;
-      border-radius: 6px; cursor: pointer; font-size: 13px; color: #666;
+
+    /* 汉堡菜单按钮（移动端） */
+    .btn-hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition);
     }
-    .btn-logout:hover { border-color: #ff4d4f; color: #ff4d4f; }
-    .layout { display: flex; min-height: calc(100vh - 56px); }
+    .btn-hamburger:hover { background: var(--bg-hover); }
+    .btn-hamburger span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--text-secondary);
+      border-radius: 2px;
+      transition: all var(--transition);
+    }
+    .btn-hamburger.active span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .btn-hamburger.active span:nth-child(2) { opacity: 0; }
+    .btn-hamburger.active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--success); display: inline-block; margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .status-text { font-size: 13px; color: var(--text-secondary); }
+    .btn-logout {
+      padding: 6px 14px; border: 1px solid var(--border-color); background: var(--bg-card);
+      border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; color: var(--text-secondary);
+      transition: all var(--transition); font-family: inherit;
+    }
+    .btn-logout:hover { border-color: var(--error); color: var(--error); }
+
+    /* 布局 */
+    .layout { display: flex; min-height: calc(100vh - var(--header-height)); }
+
+    /* 侧边栏遮罩（移动端） */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 99;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .sidebar-overlay.show { display: block; opacity: 1; }
+
+    /* 侧边栏 */
     .sidebar {
-      width: 220px; background: #fff; border-right: 1px solid #e8e8e8; padding: 16px 0;
+      width: var(--sidebar-width); background: var(--bg-card);
+      border-right: 1px solid var(--border-color); padding: 16px 0;
+      flex-shrink: 0; transition: transform 0.3s ease;
     }
     .nav-item {
       display: flex; align-items: center; gap: 10px; padding: 12px 24px;
-      cursor: pointer; font-size: 14px; color: #555;
-      border-left: 3px solid transparent; transition: all 0.2s;
+      cursor: pointer; font-size: 14px; color: var(--text-secondary);
+      border-left: 3px solid transparent; transition: all var(--transition);
+      text-decoration: none;
     }
-    .nav-item:hover { background: #f5f7fa; color: #667eea; }
-    .nav-item.active { background: #f0f2ff; color: #667eea; border-left-color: #667eea; font-weight: 500; }
+    .nav-item:hover { background: var(--bg-hover); color: var(--primary); }
+    .nav-item.active { background: var(--bg-active); color: var(--primary); border-left-color: var(--primary); font-weight: 500; }
     .nav-icon { font-size: 18px; }
-    .main { flex: 1; padding: 24px; overflow-x: hidden; }
 
+    /* 主内容区 */
+    .main { flex: 1; padding: 24px; overflow-x: hidden; min-width: 0; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tab 切换 */
     .tabs {
-      display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #f0f0f0;
+      display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-light);
     }
     .tab {
-      padding: 10px 20px; cursor: pointer; font-size: 14px; color: #666;
-      border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s;
+      padding: 10px 20px; cursor: pointer; font-size: 14px; color: var(--text-secondary);
+      border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all var(--transition);
+      white-space: nowrap;
     }
-    .tab:hover { color: #667eea; }
-    .tab.active { color: #667eea; border-bottom-color: #667eea; font-weight: 500; }
+    .tab:hover { color: var(--primary); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 500; }
     .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+    .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
 
+    /* 卡片 */
     .card {
-      background: #fff; border-radius: 10px; padding: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 20px;
+      background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px;
+      box-shadow: var(--shadow-card); margin-bottom: 20px;
+      transition: box-shadow var(--transition), transform var(--transition);
     }
+    .card:hover { box-shadow: var(--shadow-hover); }
     .card-title {
       font-size: 16px; font-weight: 600; margin-bottom: 20px;
       display: flex; align-items: center; justify-content: space-between;
     }
 
+    /* 按钮 */
     .btn {
-      padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;
-      font-size: 14px; transition: all 0.2s; display: inline-flex;
-      align-items: center; gap: 6px;
+      padding: 8px 16px; border: none; border-radius: var(--radius-sm); cursor: pointer;
+      font-size: 14px; transition: all var(--transition); display: inline-flex;
+      align-items: center; gap: 6px; font-family: inherit;
     }
-    .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
-    .btn-primary:hover { opacity: 0.9; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-secondary { background: #f5f5f5; color: #555; }
-    .btn-secondary:hover { background: #e8e8e8; }
-    .btn-danger { background: #ff4d4f; color: white; }
-    .btn-danger:hover { background: #e83e3f; }
-    .btn-success { background: #52c41a; color: white; }
+    .btn-primary { background: var(--bg-gradient); color: white; }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: var(--shadow-btn); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-secondary { background: #f5f5f5; color: var(--text-secondary); }
+    .btn-secondary:hover { background: var(--border-color); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .btn-danger { background: var(--error); color: white; }
+    .btn-danger:hover { background: #e83e3f; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(255,77,79,0.3); }
+    .btn-success { background: var(--success); color: white; }
     .btn-sm { padding: 5px 12px; font-size: 13px; }
 
     /* 表格 */
-    table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; padding: 10px 12px; border-bottom: 2px solid #f0f0f0; font-size: 13px; color: #999; font-weight: 500; }
-    td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-    tr:hover { background: #fafafa; }
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border-light); font-size: 13px; color: var(--text-muted); font-weight: 500; white-space: nowrap; }
+    td { padding: 12px; border-bottom: 1px solid var(--border-light); font-size: 14px; }
+    tr { transition: background var(--transition); }
+    tr:hover { background: var(--bg-hover); }
     .tag {
       display: inline-block; padding: 2px 8px; border-radius: 10px;
       font-size: 12px; font-weight: 500;
     }
-    .tag-busy { background: #fff2f0; color: #ff4d4f; }
-    .tag-free { background: #f6ffed; color: #52c41a; }
-    .tag-normal { background: #f0f5ff; color: #667eea; }
-    .tag-important { background: #fff7e6; color: #fa8c16; }
-    .tag-urgent { background: #fff2f0; color: #ff4d4f; }
+    .tag-busy { background: #fff2f0; color: var(--error); }
+    .tag-free { background: #f6ffed; color: var(--success); }
+    .tag-normal { background: #f0f5ff; color: var(--primary); }
+    .tag-important { background: #fff7e6; color: var(--warning); }
+    .tag-urgent { background: #fff2f0; color: var(--error); }
 
     /* 弹窗 */
     .modal-overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.45); z-index: 1000;
       display: none; align-items: center; justify-content: center;
+      padding: 20px;
     }
-    .modal-overlay.show { display: flex; }
+    .modal-overlay.show { display: flex; animation: overlayIn 0.2s ease; }
+    @keyframes overlayIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
     .modal {
       background: #fff; border-radius: 12px; padding: 28px;
       width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
     .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 24px; }
     .modal-body { margin-bottom: 24px; }
@@ -119,66 +236,94 @@
 
     /* 表单 */
     .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 500; }
+    .form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
     .form-group input, .form-group select, .form-group textarea {
-      width: 100%; padding: 8px 12px; border: 1px solid #e0e0e0;
-      border-radius: 6px; font-size: 14px; font-family: inherit;
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm); font-size: 14px; font-family: inherit;
+      transition: border-color var(--transition), box-shadow var(--transition);
     }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-      outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+      outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
     }
     .form-group textarea { min-height: 60px; resize: vertical; }
-    .form-group .tip { font-size: 12px; color: #999; margin-top: 4px; }
+    .form-group .tip { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
     .form-row { display: flex; gap: 12px; }
     .form-row .form-group { flex: 1; }
     .checkbox-row { display: flex; align-items: center; gap: 8px; }
     .checkbox-row input { width: auto; }
     .checkbox-row label { margin: 0; }
 
+    /* Toast 提示 */
     .toast {
       position: fixed; top: 20px; right: 20px; padding: 12px 20px;
-      border-radius: 8px; color: white; font-size: 14px; z-index: 9999;
+      border-radius: var(--radius-md); color: white; font-size: 14px; z-index: 9999;
       transform: translateX(120%); transition: transform 0.3s ease;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     .toast.show { transform: translateX(0); }
-    .toast.success { background: #52c41a; }
-    .toast.error { background: #ff4d4f; }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--error); }
 
-    .empty-state { text-align: center; padding: 40px; color: #999; }
+    .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
     .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
 
+    /* 开关 */
     .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; transition: 0.3s; border-radius: 24px; }
     .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; transition: 0.3s; border-radius: 50%; }
-    input:checked + .slider { background: #667eea; }
+    input:checked + .slider { background: var(--primary); }
     input:checked + .slider:before { transform: translateX(20px); }
 
+    /* 响应式 */
     @media (max-width: 768px) {
-      .sidebar { display: none; }
+      .btn-hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        bottom: 0;
+        z-index: 100;
+        transform: translateX(-100%);
+        box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      }
+      .sidebar.open { transform: translateX(0); }
       .main { padding: 16px; }
+      .header { padding: 0 16px; }
+      .status-text { display: none; }
       .form-row { flex-direction: column; }
+      .modal { padding: 20px; }
+      .card { padding: 16px; }
+      .tabs { overflow-x: auto; flex-wrap: nowrap; }
     }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="header-left">
+      <button class="btn-hamburger" id="btnHamburger" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </button>
       <div class="logo-icon">📅</div>
       <div class="header-title">日历同步管理后台</div>
     </div>
     <div class="header-right">
+      <span class="status-dot"></span>
+      <span class="status-text">服务运行中</span>
       <button class="btn-logout" onclick="logout()">退出登录</button>
     </div>
   </div>
 
   <div class="layout">
-    <div class="sidebar">
-      <div class="nav-item" onclick="location.href='/'"><span class="nav-icon">📊</span><span>仪表盘</span></div>
+    <!-- 侧边栏遮罩 -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+      <div class="nav-item" onclick="location.href='/#dashboard'"><span class="nav-icon">📊</span><span>仪表盘</span></div>
+      <div class="nav-item" onclick="location.href='/jwxt.html'"><span class="nav-icon">🎓</span><span>教务系统</span></div>
       <div class="nav-item active"><span class="nav-icon">📋</span><span>自定义事件</span></div>
-      <div class="nav-item" onclick="location.href='/'"><span class="nav-icon">⚙️</span><span>同步配置</span></div>
-      <div class="nav-item" onclick="location.href='/'"><span class="nav-icon">📝</span><span>同步日志</span></div>
+      <div class="nav-item" onclick="location.href='/#config'"><span class="nav-icon">⚙️</span><span>同步配置</span></div>
+      <div class="nav-item" onclick="location.href='/#logs'"><span class="nav-icon">📝</span><span>同步日志</span></div>
     </div>
 
     <div class="main">
@@ -194,7 +339,7 @@
             <span>日历事件管理</span>
             <button class="btn btn-primary btn-sm" onclick="openEventModal()">+ 新建事件</button>
           </div>
-          <div id="eventsTable">
+          <div class="table-wrap" id="eventsTable">
             <div class="empty-state">
               <div class="empty-icon">📅</div>
               <p>暂无事件，点击「新建事件」创建</p>
@@ -210,7 +355,7 @@
             <span>待办任务管理</span>
             <button class="btn btn-primary btn-sm" onclick="openTodoModal()">+ 新建待办</button>
           </div>
-          <div id="todosTable">
+          <div class="table-wrap" id="todosTable">
             <div class="empty-state">
               <div class="empty-icon">✅</div>
               <p>暂无待办，点击「新建待办」创建</p>
@@ -350,6 +495,17 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // ========== 移动端侧边栏 ==========
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const hamburger = document.getElementById('btnHamburger');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('show');
+      hamburger.classList.toggle('active');
+    }
+
     // ===== 工具 =====
     function showToast(msg, type = 'success') {
       const t = document.getElementById('toast');

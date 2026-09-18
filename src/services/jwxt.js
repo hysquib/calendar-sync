@@ -5,7 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const logger = require('../utils/logger');
-const { getConfigManager } = require('../utils/configManager');
+
+// 数据目录（直接使用固定路径，避免循环依赖）
+const DATA_DIR = path.join(process.cwd(), 'data');
 
 // 创建忽略 HTTPS 证书错误的 axios 实例
 const httpsAgent = new https.Agent({
@@ -40,9 +42,7 @@ class JWXTService {
    * 初始化：加载保存的 cookie
    */
   async init() {
-    const configManager = getConfigManager();
-    const dataDir = configManager.getDataDir();
-    this.cookieFile = path.join(dataDir, 'jwxt-cookies.json');
+    this.cookieFile = path.join(DATA_DIR, 'jwxt-cookies.json');
 
     try {
       if (fs.existsSync(this.cookieFile)) {
@@ -75,9 +75,7 @@ class JWXTService {
     this.isLoggedIn = true;
 
     try {
-      const configManager = getConfigManager();
-      const dataDir = configManager.getDataDir();
-      this.cookieFile = path.join(dataDir, 'jwxt-cookies.json');
+      this.cookieFile = path.join(DATA_DIR, 'jwxt-cookies.json');
 
       fs.writeFileSync(this.cookieFile, JSON.stringify({
         baseUrl,

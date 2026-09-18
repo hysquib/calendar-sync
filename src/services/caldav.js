@@ -1,5 +1,7 @@
 const axios = require('axios');
 const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+dayjs.extend(utc);
 const crypto = require('crypto');
 const logger = require('../utils/logger');
 
@@ -330,7 +332,6 @@ END:VCALENDAR
     // 对于含非 ASCII 字符的名称（如中文），使用 MD5 哈希生成 URL 安全的标识符
     // 显示名称仍通过 MKCALENDAR 的 displayname 属性正确设置
     if (/[^\x00-\x7F]/.test(name)) {
-      const crypto = require('crypto');
       return crypto.createHash('md5').update(name, 'utf8').digest('hex').substring(0, 16);
     }
     return name.toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'calendar';
@@ -354,9 +355,21 @@ END:VCALENDAR
         username: this.username,
       };
     } catch (error) {
+      if (error.response?.status === 401) {
+        return { success: false, error: '认证失败：用户名或密码错误' };
+      }
+      if (error.response?.status === 404) {
+        // 用户不存在但服务器可达，仍算连接成功
+        return {
+          success: true,
+          server: this.serverUrl,
+          username: this.username,
+          message: '用户尚未创建日历，首次同步时将自动创建',
+        };
+      }
       return {
         success: false,
-        error: error.message,
+        error: `连接失败：${error.message}`,
       };
     }
   }

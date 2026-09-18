@@ -1,10 +1,11 @@
 const cron = require('node-cron');
 const logger = require('../utils/logger');
-const config = require('../config');
+const { getConfig } = require('../config');
 const { getSyncManager } = require('./sync');
 
 /**
  * 定时任务调度器
+ * 使用动态 getConfig() 确保配置变更后立即生效
  */
 class Scheduler {
   constructor() {
@@ -22,6 +23,7 @@ class Scheduler {
       return;
     }
 
+    const config = getConfig();
     logger.info('启动定时调度器...');
 
     // 同步任务
@@ -54,6 +56,7 @@ class Scheduler {
    * 启动同步任务
    */
   _startSyncTask() {
+    const config = getConfig();
     const task = cron.schedule(config.syncCron, async () => {
       logger.info('定时同步任务触发');
       try {
@@ -92,6 +95,7 @@ class Scheduler {
    * 获取调度器状态
    */
   getStatus() {
+    const config = getConfig();
     return {
       isRunning: this.isRunning,
       tasks: Array.from(this.tasks.keys()),

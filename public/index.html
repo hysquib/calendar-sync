@@ -5,22 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>日历同步管理后台</title>
   <style>
+    :root {
+      --primary: #667eea;
+      --primary-dark: #764ba2;
+      --bg-gradient: linear-gradient(135deg, #667eea, #764ba2);
+      --bg-page: #f5f7fa;
+      --text-primary: #333;
+      --text-secondary: #555;
+      --text-muted: #999;
+      --border-color: #e0e0e0;
+      --border-light: #f0f0f0;
+      --bg-card: #fff;
+      --bg-hover: #f5f7fa;
+      --bg-active: #f0f2ff;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-btn: 0 4px 12px rgba(102, 126, 234, 0.35);
+      --success: #52c41a;
+      --error: #ff4d4f;
+      --info: #1890ff;
+      --warning: #fa8c16;
+      --sidebar-width: 220px;
+      --header-height: 56px;
+      --transition: 0.2s;
+      --font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #f5f7fa;
-      color: #333;
+      font-family: var(--font-stack);
+      background: var(--bg-page);
+      color: var(--text-primary);
     }
 
     /* 顶部导航 */
     .header {
-      background: #fff;
-      border-bottom: 1px solid #e8e8e8;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
       padding: 0 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 56px;
+      height: var(--header-height);
       position: sticky;
       top: 0;
       z-index: 100;
@@ -33,8 +62,8 @@
     .logo-icon {
       width: 36px;
       height: 36px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      border-radius: 8px;
+      background: var(--bg-gradient);
+      border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -50,11 +79,39 @@
       align-items: center;
       gap: 16px;
     }
+
+    /* 汉堡菜单按钮（移动端） */
+    .btn-hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition);
+    }
+    .btn-hamburger:hover { background: var(--bg-hover); }
+    .btn-hamburger span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--text-secondary);
+      border-radius: 2px;
+      transition: all var(--transition);
+    }
+    .btn-hamburger.active span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .btn-hamburger.active span:nth-child(2) { opacity: 0; }
+    .btn-hamburger.active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
     .status-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #52c41a;
+      background: var(--success);
       display: inline-block;
       margin-right: 6px;
       animation: pulse 2s infinite;
@@ -65,35 +122,53 @@
     }
     .status-text {
       font-size: 13px;
-      color: #666;
+      color: var(--text-secondary);
     }
     .btn-logout {
       padding: 6px 14px;
-      border: 1px solid #e0e0e0;
-      background: #fff;
-      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
       cursor: pointer;
       font-size: 13px;
-      color: #666;
-      transition: all 0.2s;
+      color: var(--text-secondary);
+      transition: all var(--transition);
+      font-family: inherit;
     }
     .btn-logout:hover {
-      border-color: #ff4d4f;
-      color: #ff4d4f;
+      border-color: var(--error);
+      color: var(--error);
     }
 
     /* 布局 */
     .layout {
       display: flex;
-      min-height: calc(100vh - 56px);
+      min-height: calc(100vh - var(--header-height));
+    }
+
+    /* 侧边栏遮罩（移动端） */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 99;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .sidebar-overlay.show {
+      display: block;
+      opacity: 1;
     }
 
     /* 侧边栏 */
     .sidebar {
-      width: 220px;
-      background: #fff;
-      border-right: 1px solid #e8e8e8;
+      width: var(--sidebar-width);
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-color);
       padding: 16px 0;
+      flex-shrink: 0;
+      transition: transform 0.3s ease;
     }
     .nav-item {
       display: flex;
@@ -102,18 +177,19 @@
       padding: 12px 24px;
       cursor: pointer;
       font-size: 14px;
-      color: #555;
+      color: var(--text-secondary);
       border-left: 3px solid transparent;
-      transition: all 0.2s;
+      transition: all var(--transition);
+      text-decoration: none;
     }
     .nav-item:hover {
-      background: #f5f7fa;
-      color: #667eea;
+      background: var(--bg-hover);
+      color: var(--primary);
     }
     .nav-item.active {
-      background: #f0f2ff;
-      color: #667eea;
-      border-left-color: #667eea;
+      background: var(--bg-active);
+      color: var(--primary);
+      border-left-color: var(--primary);
       font-weight: 500;
     }
     .nav-icon { font-size: 18px; }
@@ -123,17 +199,26 @@
       flex: 1;
       padding: 24px;
       overflow-x: hidden;
+      min-width: 0;
     }
     .page { display: none; }
-    .page.active { display: block; }
+    .page.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     /* 卡片 */
     .card {
-      background: #fff;
-      border-radius: 10px;
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
       padding: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      box-shadow: var(--shadow-card);
       margin-bottom: 20px;
+      transition: box-shadow var(--transition), transform var(--transition);
+    }
+    .card:hover {
+      box-shadow: var(--shadow-hover);
     }
     .card-title {
       font-size: 16px;
@@ -147,13 +232,13 @@
       font-size: 12px;
       padding: 2px 8px;
       border-radius: 10px;
-      background: #f0f2ff;
-      color: #667eea;
+      background: var(--bg-active);
+      color: var(--primary);
       font-weight: normal;
     }
-    .card-title .badge.green { background: #f6ffed; color: #52c41a; }
-    .card-title .badge.gray { background: #f5f5f5; color: #999; }
-    .card-title .badge.red { background: #fff2f0; color: #ff4d4f; }
+    .card-title .badge.green { background: #f6ffed; color: var(--success); }
+    .card-title .badge.gray { background: #f5f5f5; color: var(--text-muted); }
+    .card-title .badge.red { background: #fff2f0; color: var(--error); }
 
     /* 统计卡片 */
     .stats-grid {
@@ -163,20 +248,38 @@
       margin-bottom: 20px;
     }
     .stat-card {
-      background: #fff;
-      border-radius: 10px;
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
       padding: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      box-shadow: var(--shadow-card);
+      transition: box-shadow var(--transition), transform var(--transition);
+      position: relative;
+      overflow: hidden;
     }
+    .stat-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--bg-gradient);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .stat-card:hover::before { opacity: 1; }
     .stat-label {
       font-size: 13px;
-      color: #999;
+      color: var(--text-muted);
       margin-bottom: 8px;
     }
     .stat-value {
       font-size: 28px;
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary);
     }
     .stat-value.small { font-size: 18px; }
     .stat-icon {
@@ -189,36 +292,37 @@
     .btn {
       padding: 8px 16px;
       border: none;
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       font-size: 14px;
-      transition: all 0.2s;
+      transition: all var(--transition);
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      font-family: inherit;
     }
     .btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: var(--bg-gradient);
       color: white;
     }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: var(--shadow-btn); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
     .btn-secondary {
       background: #f5f5f5;
-      color: #555;
+      color: var(--text-secondary);
     }
-    .btn-secondary:hover { background: #e8e8e8; }
-    .btn-success { background: #52c41a; color: white; }
-    .btn-success:hover { background: #3fae0d; }
-    .btn-danger { background: #ff4d4f; color: white; }
-    .btn-danger:hover { background: #e83e3f; }
+    .btn-secondary:hover { background: var(--border-color); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #3fae0d; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(82,196,26,0.3); }
+    .btn-danger { background: var(--error); color: white; }
+    .btn-danger:hover { background: #e83e3f; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(255,77,79,0.3); }
     .btn-sm { padding: 5px 12px; font-size: 13px; }
 
     /* 表单 */
     .form-section {
       margin-bottom: 24px;
       padding-bottom: 24px;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-light);
     }
     .form-section:last-child {
       border-bottom: none;
@@ -229,7 +333,7 @@
       font-size: 15px;
       font-weight: 600;
       margin-bottom: 16px;
-      color: #333;
+      color: var(--text-primary);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -247,26 +351,26 @@
     }
     .form-group label {
       font-size: 13px;
-      color: #555;
+      color: var(--text-secondary);
       font-weight: 500;
     }
-    .form-group label .required { color: #ff4d4f; }
+    .form-group label .required { color: var(--error); }
     .form-group input, .form-group select, .form-group textarea {
       padding: 8px 12px;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
       font-size: 14px;
-      transition: border-color 0.2s;
+      transition: border-color var(--transition), box-shadow var(--transition);
       font-family: inherit;
     }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
     .form-group .tip {
       font-size: 12px;
-      color: #999;
+      color: var(--text-muted);
     }
     .form-actions {
       display: flex;
@@ -274,7 +378,7 @@
       justify-content: flex-end;
       margin-top: 24px;
       padding-top: 20px;
-      border-top: 1px solid #f0f0f0;
+      border-top: 1px solid var(--border-light);
     }
 
     /* 开关 */
@@ -304,13 +408,13 @@
       transition: 0.3s;
       border-radius: 50%;
     }
-    input:checked + .slider { background-color: #667eea; }
+    input:checked + .slider { background-color: var(--primary); }
     input:checked + .slider:before { transform: translateX(20px); }
 
     /* 日志 */
     .log-container {
       background: #1e1e2e;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       padding: 16px;
       max-height: 500px;
       overflow-y: auto;
@@ -334,12 +438,14 @@
       gap: 12px;
       margin-bottom: 16px;
       align-items: center;
+      flex-wrap: wrap;
     }
     .log-toolbar select {
       padding: 6px 10px;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
       font-size: 13px;
+      font-family: inherit;
     }
 
     /* Toast 提示 */
@@ -348,7 +454,7 @@
       top: 20px;
       right: 20px;
       padding: 12px 20px;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       color: white;
       font-size: 14px;
       z-index: 9999;
@@ -357,45 +463,47 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     .toast.show { transform: translateX(0); }
-    .toast.success { background: #52c41a; }
-    .toast.error { background: #ff4d4f; }
-    .toast.info { background: #1890ff; }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--error); }
+    .toast.info { background: var(--info); }
 
     /* 标签页配置区域 */
     .config-tabs {
       display: flex;
       gap: 8px;
       margin-bottom: 20px;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-light);
+      flex-wrap: wrap;
     }
     .config-tab {
       padding: 10px 20px;
       cursor: pointer;
       font-size: 14px;
-      color: #666;
+      color: var(--text-secondary);
       border-bottom: 2px solid transparent;
       margin-bottom: -1px;
-      transition: all 0.2s;
+      transition: all var(--transition);
+      white-space: nowrap;
     }
-    .config-tab:hover { color: #667eea; }
+    .config-tab:hover { color: var(--primary); }
     .config-tab.active {
-      color: #667eea;
-      border-bottom-color: #667eea;
+      color: var(--primary);
+      border-bottom-color: var(--primary);
       font-weight: 500;
     }
     .config-panel { display: none; }
-    .config-panel.active { display: block; }
+    .config-panel.active { display: block; animation: fadeIn 0.3s ease; }
 
     /* 同步结果 */
     .sync-result {
       background: #f6ffed;
       border: 1px solid #b7eb8f;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       padding: 16px;
       margin-top: 16px;
       display: none;
     }
-    .sync-result.show { display: block; }
+    .sync-result.show { display: block; animation: fadeIn 0.3s ease; }
     .sync-result h4 {
       color: #389e0d;
       margin-bottom: 12px;
@@ -405,15 +513,48 @@
       justify-content: space-between;
       padding: 6px 0;
       font-size: 13px;
-      border-bottom: 1px dashed #e0e0e0;
+      border-bottom: 1px dashed var(--border-color);
     }
     .sync-result-item:last-child { border-bottom: none; }
 
+    /* 骨架屏 */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-sm);
+      display: inline-block;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
     /* 响应式 */
     @media (max-width: 768px) {
-      .sidebar { display: none; }
+      .btn-hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        bottom: 0;
+        z-index: 100;
+        transform: translateX(-100%);
+        box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      }
+      .sidebar.open { transform: translateX(0); }
       .main { padding: 16px; }
       .stats-grid { grid-template-columns: 1fr 1fr; }
+      .config-tabs { overflow-x: auto; flex-wrap: nowrap; }
+      .form-grid { grid-template-columns: 1fr; }
+      .header { padding: 0 16px; }
+      .status-text { display: none; }
+      .card { padding: 16px; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .form-actions { flex-direction: column; }
+      .form-actions .btn { width: 100%; justify-content: center; }
     }
   </style>
 </head>
@@ -421,6 +562,9 @@
   <!-- 顶部导航 -->
   <div class="header">
     <div class="header-left">
+      <button class="btn-hamburger" id="btnHamburger" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </button>
       <div class="logo-icon">📅</div>
       <div class="header-title">日历同步管理后台</div>
     </div>
@@ -433,8 +577,11 @@
 
   <!-- 布局 -->
   <div class="layout">
+    <!-- 侧边栏遮罩 -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <!-- 侧边栏 -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
       <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
         <span class="nav-icon">📊</span>
         <span>仪表盘</span>
@@ -466,6 +613,11 @@
             <span class="stat-icon">📚</span>
             <div class="stat-label">喜鹊儿课表</div>
             <div class="stat-value small" id="statXiqueer">未启用</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">🎓</span>
+            <div class="stat-label">教务系统课表</div>
+            <div class="stat-value small" id="statJwxt">未启用</div>
           </div>
           <div class="stat-card">
             <span class="stat-icon">✅</span>
@@ -504,7 +656,7 @@
               <div style="font-size: 15px; color: #333;" id="syncState">空闲</div>
             </div>
           </div>
-          <div style="margin-top: 20px; display: flex; gap: 12px;">
+          <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
             <button class="btn btn-primary" onclick="triggerSync()" id="btnSync">
               🔄 立即同步
             </button>
@@ -534,6 +686,7 @@
 
           <div class="config-tabs">
             <div class="config-tab active" data-tab="xiqueer" onclick="switchConfigTab('xiqueer')">📚 喜鹊儿课表</div>
+            <div class="config-tab" data-tab="jwxt" onclick="switchConfigTab('jwxt')">🎓 教务系统</div>
             <div class="config-tab" data-tab="wecom" onclick="switchConfigTab('wecom')">✅ 企业微信</div>
             <div class="config-tab" data-tab="caldav" onclick="switchConfigTab('caldav')">📡 CalDAV</div>
             <div class="config-tab" data-tab="graph" onclick="switchConfigTab('graph')">📅 Exchange</div>
@@ -575,6 +728,47 @@
                   <input type="number" id="xiqueerDaysAhead" value="14" min="1" max="90">
                   <span class="tip">默认获取未来14天的课表</span>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 教务系统配置 -->
+          <div class="config-panel" id="panel-jwxt">
+            <div class="form-section">
+              <div class="form-section-title">
+                <span class="icon">🎓</span>
+                教务系统课表同步
+                <label class="switch" style="margin-left: auto;">
+                  <input type="checkbox" id="jwxtEnabled">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>教务系统地址<span class="required">*</span></label>
+                  <input type="text" id="jwxtBaseUrl" placeholder="https://jw.hebust.edu.cn/hbkjjw">
+                  <span class="tip">教务系统根地址（不含 /cas/login.action 部分）</span>
+                </div>
+                <div class="form-group">
+                  <label>学号<span class="required">*</span></label>
+                  <input type="text" id="jwxtUsername" placeholder="请输入学号">
+                  <span class="tip">用于标识课表归属</span>
+                </div>
+                <div class="form-group">
+                  <label>日历名称</label>
+                  <input type="text" id="jwxtCalendarName" placeholder="教务课表">
+                  <span class="tip">在Exchange日历中显示的名称</span>
+                </div>
+                <div class="form-group">
+                  <label>提前获取天数</label>
+                  <input type="number" id="jwxtDaysAhead" value="14" min="1" max="90">
+                  <span class="tip">默认获取未来14天的课表</span>
+                </div>
+              </div>
+              <div style="margin-top: 16px; padding: 12px; background: #f0f5ff; border-radius: 6px; font-size: 12px; color: #666;">
+                💡 教务系统课表需要通过浏览器抓取方式导入，请前往
+                <a href="/jwxt.html" style="color: var(--primary); font-weight: 500;">教务系统导入页</a>
+                按步骤操作。
               </div>
             </div>
           </div>
@@ -855,6 +1049,17 @@
       return res.json();
     }
 
+    // ========== 移动端侧边栏 ==========
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const hamburger = document.getElementById('btnHamburger');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('show');
+      hamburger.classList.toggle('active');
+    }
+
     // ========== 页面切换 ==========
 
     function switchPage(page) {
@@ -862,6 +1067,14 @@
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById(`page-${page}`).classList.add('active');
       document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+
+      // 移动端切换页面时关闭侧边栏
+      if (window.innerWidth <= 768) {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar.classList.contains('open')) {
+          toggleSidebar();
+        }
+      }
 
       if (page === 'dashboard') {
         loadStatus();
@@ -909,6 +1122,8 @@
       // 统计卡片
       document.getElementById('statXiqueer').textContent =
         sync.services.xiqueer.enabled ? '已启用' : '未启用';
+      document.getElementById('statJwxt').textContent =
+        sync.services.jwxt && sync.services.jwxt.enabled ? '已启用' : '未启用';
       document.getElementById('statWecom').textContent =
         sync.services.wecom.enabled ? '已启用' : '未启用';
       
@@ -955,7 +1170,7 @@
       if (sync.lastSyncResult && sync.lastSyncResult.results) {
         let html = '';
         const results = sync.lastSyncResult.results;
-        const nameMap = { xiqueer: '喜鹊儿课表', wecom: '企业微信待办', custom: '自定义事件' };
+        const nameMap = { xiqueer: '喜鹊儿课表', jwxt: '教务系统课表', wecom: '企业微信待办', custom: '自定义事件' };
         for (const [key, val] of Object.entries(results)) {
           const name = nameMap[key] || key;
           if (val.success !== false) {
@@ -987,7 +1202,7 @@
           const resultDiv = document.getElementById('syncResult');
           let html = '<h4>✅ 同步完成</h4>';
           const results = data.result.results;
-          const nameMap2 = { xiqueer: '喜鹊儿课表', wecom: '企业微信待办', custom: '自定义事件' };
+          const nameMap2 = { xiqueer: '喜鹊儿课表', jwxt: '教务系统课表', wecom: '企业微信待办', custom: '自定义事件' };
           for (const [key, val] of Object.entries(results)) {
             const name = nameMap2[key] || key;
             if (val.success !== false) {
@@ -1024,7 +1239,7 @@
         const data = await api('/api/sync/test', { method: 'POST' });
         if (data && data.success) {
           let msg = [];
-          const testNameMap = { xiqueer: '喜鹊儿', wecom: '企业微信', msGraph: 'Exchange', caldav: 'CalDAV', custom: '自定义事件' };
+          const testNameMap = { xiqueer: '喜鹊儿', jwxt: '教务系统', wecom: '企业微信', msGraph: 'Exchange', caldav: 'CalDAV', custom: '自定义事件' };
           for (const [key, val] of Object.entries(data.results)) {
             const name = testNameMap[key] || key;
             msg.push(`${name}: ${val.success ? '✅ 连接成功' : '❌ ' + val.error}`);
@@ -1054,6 +1269,15 @@
       document.getElementById('xiqueerCalendarName').value = cfg.xiqueer.calendarName || '';
       document.getElementById('xiqueerDaysAhead').value = cfg.xiqueer.daysAhead || 14;
       document.getElementById('xiqueerEnabled').checked = cfg.xiqueer.enabled;
+
+      // 教务系统
+      if (cfg.jwxt) {
+        document.getElementById('jwxtEnabled').checked = cfg.jwxt.enabled || false;
+        document.getElementById('jwxtBaseUrl').value = cfg.jwxt.baseUrl || '';
+        document.getElementById('jwxtUsername').value = cfg.jwxt.username || '';
+        document.getElementById('jwxtCalendarName').value = cfg.jwxt.calendarName || '';
+        document.getElementById('jwxtDaysAhead').value = cfg.jwxt.daysAhead || 14;
+      }
 
       // 企业微信
       document.getElementById('wecomCorpId').value = cfg.wecom.corpId || '';
@@ -1102,6 +1326,13 @@
           school: document.getElementById('xiqueerSchool').value,
           calendarName: document.getElementById('xiqueerCalendarName').value,
           daysAhead: parseInt(document.getElementById('xiqueerDaysAhead').value, 10),
+        },
+        jwxt: {
+          enabled: document.getElementById('jwxtEnabled').checked,
+          baseUrl: document.getElementById('jwxtBaseUrl').value,
+          username: document.getElementById('jwxtUsername').value,
+          calendarName: document.getElementById('jwxtCalendarName').value,
+          daysAhead: parseInt(document.getElementById('jwxtDaysAhead').value, 10),
         },
         wecom: {
           enabled: document.getElementById('wecomEnabled').checked,
@@ -1246,6 +1477,16 @@
 
     // 页面加载时加载状态
     loadStatus();
+
+    // 支持 hash 导航（从其他页面跳转过来时自动切换 tab）
+    function handleHashNavigation() {
+      const hash = window.location.hash.slice(1);
+      if (hash && ['dashboard', 'config', 'logs'].includes(hash)) {
+        switchPage(hash);
+      }
+    }
+    handleHashNavigation();
+    window.addEventListener('hashchange', handleHashNavigation);
 
     // 每30秒刷新一次状态
     setInterval(() => {

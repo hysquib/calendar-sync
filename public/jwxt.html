@@ -3,89 +3,246 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>教务系统导入 - 日历同步管理</title>
+  <title>教务系统导入 - 日历同步管理后台</title>
   <style>
+    :root {
+      --primary: #667eea;
+      --primary-dark: #764ba2;
+      --bg-gradient: linear-gradient(135deg, #667eea, #764ba2);
+      --bg-page: #f5f7fa;
+      --text-primary: #333;
+      --text-secondary: #555;
+      --text-muted: #999;
+      --border-color: #e0e0e0;
+      --border-light: #f0f0f0;
+      --bg-card: #fff;
+      --bg-hover: #f5f7fa;
+      --bg-active: #f0f2ff;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-btn: 0 4px 12px rgba(102, 126, 234, 0.35);
+      --success: #52c41a;
+      --error: #ff4d4f;
+      --info: #1890ff;
+      --warning: #fa8c16;
+      --sidebar-width: 220px;
+      --header-height: 56px;
+      --transition: 0.2s;
+      --font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #f5f7fa;
-      color: #333;
+      font-family: var(--font-stack);
+      background: var(--bg-page);
+      color: var(--text-primary);
+    }
+
+    /* 顶部导航 */
+    .header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 24px;
       display: flex;
-      min-height: 100vh;
+      align-items: center;
+      justify-content: space-between;
+      height: var(--header-height);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-gradient);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+    }
+    .header-title {
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* 汉堡菜单按钮（移动端） */
+    .btn-hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition);
+    }
+    .btn-hamburger:hover { background: var(--bg-hover); }
+    .btn-hamburger span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--text-secondary);
+      border-radius: 2px;
+      transition: all var(--transition);
+    }
+    .btn-hamburger.active span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .btn-hamburger.active span:nth-child(2) { opacity: 0; }
+    .btn-hamburger.active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      display: inline-block;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .status-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .btn-logout {
+      padding: 6px 14px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-secondary);
+      transition: all var(--transition);
+      font-family: inherit;
+    }
+    .btn-logout:hover {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    /* 布局 */
+    .layout {
+      display: flex;
+      min-height: calc(100vh - var(--header-height));
+    }
+
+    /* 侧边栏遮罩（移动端） */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 99;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .sidebar-overlay.show {
+      display: block;
+      opacity: 1;
     }
 
     /* 侧边栏 */
     .sidebar {
-      width: 220px;
-      background: #fff;
-      border-right: 1px solid #e8e8e8;
-      padding: 20px 0;
+      width: var(--sidebar-width);
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-color);
+      padding: 16px 0;
       flex-shrink: 0;
-    }
-    .sidebar-header {
-      padding: 0 20px 20px;
-      border-bottom: 1px solid #f0f0f0;
-      margin-bottom: 10px;
-    }
-    .sidebar-header h1 {
-      font-size: 18px;
-      color: #1890ff;
-      font-weight: 600;
-    }
-    .sidebar-header p {
-      font-size: 12px;
-      color: #999;
-      margin-top: 4px;
+      transition: transform 0.3s ease;
     }
     .nav-item {
       display: flex;
       align-items: center;
-      padding: 12px 20px;
+      gap: 10px;
+      padding: 12px 24px;
       cursor: pointer;
-      transition: all 0.2s;
-      color: #555;
       font-size: 14px;
+      color: var(--text-secondary);
+      border-left: 3px solid transparent;
+      transition: all var(--transition);
       text-decoration: none;
     }
     .nav-item:hover {
-      background: #f5f7fa;
-      color: #667eea;
+      background: var(--bg-hover);
+      color: var(--primary);
     }
     .nav-item.active {
-      background: #f0f2ff;
-      color: #667eea;
+      background: var(--bg-active);
+      color: var(--primary);
+      border-left-color: var(--primary);
       font-weight: 500;
-      border-left: 3px solid #667eea;
     }
-    .nav-icon { font-size: 18px; margin-right: 10px; }
+    .nav-icon { font-size: 18px; }
 
     /* 主内容区 */
     .main {
       flex: 1;
       padding: 30px;
       overflow-y: auto;
-      max-width: 900px;
+      max-width: 960px;
+      min-width: 0;
     }
     .page-header {
       margin-bottom: 24px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .page-header h2 {
       font-size: 22px;
       font-weight: 600;
       margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .page-header p {
       font-size: 14px;
-      color: #999;
+      color: var(--text-muted);
     }
 
     /* 步骤卡片 */
     .step-card {
-      background: #fff;
-      border-radius: 10px;
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
       padding: 24px;
       margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      box-shadow: var(--shadow-card);
+      transition: box-shadow var(--transition), transform var(--transition);
+      animation: fadeIn 0.4s ease both;
+    }
+    .step-card:nth-child(2) { animation-delay: 0.1s; }
+    .step-card:nth-child(3) { animation-delay: 0.15s; }
+    .step-card:nth-child(4) { animation-delay: 0.2s; }
+    .step-card:nth-child(5) { animation-delay: 0.25s; }
+    .step-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+    .step-card.done {
+      border-left: 4px solid var(--success);
     }
     .step-header {
       display: flex;
@@ -94,10 +251,10 @@
       margin-bottom: 16px;
     }
     .step-number {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: var(--bg-gradient);
       color: white;
       display: flex;
       align-items: center;
@@ -105,13 +262,18 @@
       font-size: 16px;
       font-weight: 600;
       flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    .step-number.success {
+      background: linear-gradient(135deg, var(--success), #389e0d);
+      box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
     }
     .step-title {
       font-size: 16px;
       font-weight: 600;
     }
     .step-body {
-      margin-left: 44px;
+      margin-left: 48px;
     }
 
     /* 表单 */
@@ -121,26 +283,28 @@
     .form-group label {
       display: block;
       font-size: 13px;
-      color: #555;
+      color: var(--text-secondary);
       margin-bottom: 6px;
       font-weight: 500;
     }
     .form-group input {
       width: 100%;
       padding: 10px 14px;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
       font-size: 14px;
-      transition: border-color 0.2s;
+      transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+      font-family: inherit;
     }
     .form-group input:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+      transform: translateY(-1px);
     }
     .form-tip {
       font-size: 12px;
-      color: #999;
+      color: var(--text-muted);
       margin-top: 4px;
     }
 
@@ -148,63 +312,89 @@
     .btn {
       padding: 10px 20px;
       border: none;
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       font-size: 14px;
-      transition: all 0.2s;
+      transition: all var(--transition);
       display: inline-flex;
       align-items: center;
       gap: 6px;
       text-decoration: none;
+      font-family: inherit;
     }
     .btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: var(--bg-gradient);
       color: white;
     }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: var(--shadow-btn); }
     .btn-secondary {
       background: #f5f5f5;
-      color: #555;
+      color: var(--text-secondary);
     }
-    .btn-secondary:hover { background: #e8e8e8; }
-    .btn-success { background: #52c41a; color: white; }
-    .btn-success:hover { background: #3fae0d; }
+    .btn-secondary:hover { background: var(--border-color); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #3fae0d; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(82,196,26,0.3); }
 
     /* 代码框 */
     .code-box {
       background: #1e1e2e;
       color: #cdd6f4;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       padding: 16px;
+      padding-top: 44px;
       font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-      font-size: 12px;
-      line-height: 1.6;
+      font-size: 12.5px;
+      line-height: 1.7;
       white-space: pre-wrap;
       word-break: break-all;
-      max-height: 300px;
+      max-height: 360px;
       overflow-y: auto;
       position: relative;
+      border: 1px solid #313244;
     }
+    .code-box::-webkit-scrollbar { width: 8px; }
+    .code-box::-webkit-scrollbar-track { background: #181825; }
+    .code-box::-webkit-scrollbar-thumb { background: #45475a; border-radius: 4px; }
     .code-box .copy-btn {
       position: absolute;
       top: 8px;
       right: 8px;
-      padding: 4px 12px;
-      background: #667eea;
+      padding: 5px 14px;
+      background: var(--primary);
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       font-size: 12px;
+      transition: all var(--transition);
+      font-family: inherit;
     }
-    .code-box .copy-btn:hover { opacity: 0.8; }
+    .code-box .copy-btn:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    }
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      background: #e8e8e8;
+      border: 1px solid #d0d0d0;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      box-shadow: 0 1px 0 #d0d0d0;
+    }
 
     /* 状态提示 */
     .alert {
       padding: 12px 16px;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       margin-bottom: 16px;
       font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      animation: fadeIn 0.3s ease;
     }
     .alert-info {
       background: #e6f7ff;
@@ -228,20 +418,28 @@
     }
 
     /* 导入结果 */
+    .result-table-wrap {
+      overflow-x: auto;
+      margin-top: 12px;
+    }
     .result-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 12px;
+      min-width: 400px;
     }
     .result-table th, .result-table td {
       padding: 8px 12px;
       text-align: left;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-light);
       font-size: 13px;
     }
     .result-table th {
-      background: #f5f7fa;
+      background: var(--bg-page);
       font-weight: 600;
+      white-space: nowrap;
+    }
+    .result-table tr:hover {
+      background: var(--bg-hover);
     }
 
     /* 登录状态 */
@@ -252,85 +450,128 @@
       font-size: 12px;
       font-weight: 500;
     }
-    .status-badge.online { background: #f6ffed; color: #52c41a; }
-    .status-badge.offline { background: #f5f5f5; color: #999; }
+    .status-badge.online { background: #f6ffed; color: var(--success); }
+    .status-badge.offline { background: #f5f5f5; color: var(--text-muted); }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .btn-hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        bottom: 0;
+        z-index: 100;
+        transform: translateX(-100%);
+        box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main { padding: 16px; }
+      .header { padding: 0 16px; }
+      .status-text { display: none; }
+      .step-body { margin-left: 0; }
+      .step-card { padding: 16px; }
+    }
   </style>
 </head>
 <body>
-  <!-- 侧边栏 -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <h1>日历同步</h1>
-      <p>管理后台</p>
+  <!-- 顶部导航 -->
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-hamburger" id="btnHamburger" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="logo-icon">📅</div>
+      <div class="header-title">日历同步管理后台</div>
     </div>
-    <a href="/" class="nav-item">
-      <span class="nav-icon">📊</span>
-      <span>仪表盘</span>
-    </a>
-    <a href="/jwxt.html" class="nav-item active">
-      <span class="nav-icon">🎓</span>
-      <span>教务系统</span>
-    </a>
-    <a href="/custom.html" class="nav-item">
-      <span class="nav-icon">📋</span>
-      <span>自定义事件</span>
-    </a>
-    <a href="/" class="nav-item">
-      <span class="nav-icon">⚙️</span>
-      <span>同步配置</span>
-    </a>
+    <div class="header-right">
+      <span class="status-dot"></span>
+      <span class="status-text">服务运行中</span>
+      <button class="btn-logout" onclick="logout()">退出登录</button>
+    </div>
   </div>
 
-  <!-- 主内容 -->
-  <div class="main">
-    <div class="page-header">
-      <h2>🎓 教务系统课表导入</h2>
-      <p>通过本地浏览器登录教务系统，抓取课表并同步到日历</p>
-    </div>
+  <!-- 布局 -->
+  <div class="layout">
+    <!-- 侧边栏遮罩 -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-    <!-- 登录状态 -->
-    <div id="loginStatus" class="alert alert-info">
-      正在检查教务系统登录状态...
-    </div>
-
-    <!-- 步骤 1：配置教务系统信息 -->
-    <div class="step-card">
-      <div class="step-header">
-        <div class="step-number">1</div>
-        <div class="step-title">填写教务系统信息</div>
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+      <div class="nav-item" onclick="location.href='/#dashboard'">
+        <span class="nav-icon">📊</span>
+        <span>仪表盘</span>
       </div>
-      <div class="step-body">
-        <div class="form-group">
-          <label>教务系统地址</label>
-          <input type="text" id="baseUrlInput" placeholder="https://jw.hebust.edu.cn/hbkjjw" value="">
-          <div class="form-tip">填写你们学校教务系统的根地址（不含 /cas/login.action 部分）</div>
+      <div class="nav-item active">
+        <span class="nav-icon">🎓</span>
+        <span>教务系统</span>
+      </div>
+      <div class="nav-item" onclick="location.href='/custom.html'">
+        <span class="nav-icon">📋</span>
+        <span>自定义事件</span>
+      </div>
+      <div class="nav-item" onclick="location.href='/#config'">
+        <span class="nav-icon">⚙️</span>
+        <span>同步配置</span>
+      </div>
+      <div class="nav-item" onclick="location.href='/#logs'">
+        <span class="nav-icon">📝</span>
+        <span>同步日志</span>
+      </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="main">
+      <div class="page-header">
+        <h2>🎓 教务系统课表导入</h2>
+        <p>通过本地浏览器登录教务系统，抓取课表并同步到日历</p>
+      </div>
+
+      <!-- 登录状态 -->
+      <div id="loginStatus" class="alert alert-info">
+        正在检查教务系统登录状态...
+      </div>
+
+      <!-- 步骤 1：配置教务系统信息 -->
+      <div class="step-card" id="step1">
+        <div class="step-header">
+          <div class="step-number">1</div>
+          <div class="step-title">填写教务系统信息</div>
         </div>
-        <div class="form-group">
-          <label>学号</label>
-          <input type="text" id="usernameInput" placeholder="请输入学号" value="">
-          <div class="form-tip">用于标识课表归属，同步时需要</div>
+        <div class="step-body">
+          <div class="form-group">
+            <label>教务系统地址</label>
+            <input type="text" id="baseUrlInput" placeholder="https://jw.hebust.edu.cn/hbkjjw" value="">
+            <div class="form-tip">填写你们学校教务系统的根地址（不含 /cas/login.action 部分）</div>
+          </div>
+          <div class="form-group">
+            <label>学号</label>
+            <input type="text" id="usernameInput" placeholder="请输入学号" value="">
+            <div class="form-tip">用于标识课表归属，同步时需要</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- 步骤 2：打开教务系统 -->
-    <div class="step-card">
-      <div class="step-header">
-        <div class="step-number">2</div>
-        <div class="step-title">在本地浏览器打开教务系统并登录</div>
-      </div>
-      <div class="step-body">
-        <p style="margin-bottom: 12px; color: #666; font-size: 13px;">
-          点击下方按钮，会在新标签页打开教务系统登录页。<br>
-          请在<strong>连接校园网的电脑或手机</strong>上操作，登录后进入课表页面。
-        </p>
-        <button class="btn btn-primary" onclick="openJwxt()">
-          🌐 打开教务系统
-        </button>
-        <button class="btn btn-success" onclick="openSchedulePage()" style="margin-left:8px">
-          📋 直接打开课表页
-        </button>
-        <p style="margin-top: 12px; color: #999; font-size: 12px;">
+      <!-- 步骤 2：打开教务系统 -->
+      <div class="step-card" id="step2">
+        <div class="step-header">
+          <div class="step-number">2</div>
+          <div class="step-title">在本地浏览器打开教务系统并登录</div>
+        </div>
+        <div class="step-body">
+          <p style="margin-bottom: 12px; color: #666; font-size: 13px;">
+            点击下方按钮，会在新标签页打开教务系统登录页。<br>
+            请在<strong>连接校园网的电脑或手机</strong>上操作，登录后进入课表页面。
+          </p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="openJwxt()">
+              🌐 打开教务系统
+            </button>
+            <button class="btn btn-success" onclick="openSchedulePage()">
+              📋 直接打开课表页
+            </button>
+          </div>
+          <p style="margin-top: 12px; color: #999; font-size: 12px;">
             先用「打开教务系统」登录，登录成功后再用「直接打开课表页」打开课表页面。<br>
             <strong>注意：必须在校园网环境下操作。</strong>
           </p>
@@ -339,86 +580,107 @@
             <input type="date" id="semesterStartInput" value="2026-09-01">
             <div class="form-tip">用于将"第N周周X"转换为实际日期，请填写本学期第一周的周一日期</div>
           </div>
-      </div>
-    </div>
-
-    <!-- 步骤 3：获取抓取代码 -->
-    <div class="step-card">
-      <div class="step-header">
-        <div class="step-number">3</div>
-        <div class="step-title">复制下方代码，粘贴到教务系统页面的控制台</div>
-      </div>
-      <div class="step-body">
-        <p style="margin-bottom: 12px; color: #666; font-size: 13px;">
-          在教务系统课表页面按 <kbd>F12</kbd> 打开开发者工具，切换到 <strong>Console（控制台）</strong> 标签页，
-          粘贴下面的代码并按 <strong>Enter</strong> 执行。
-        </p>
-        <div class="code-box">
-          <button class="copy-btn" onclick="copySnippet()">复制代码</button>
-          <pre id="snippetCode">请先在步骤 1 填写信息，代码会自动生成...</pre>
-        </div>
-        <p style="margin-top: 12px; color: #999; font-size: 12px;">
-          代码会自动抓取当前页面的课表数据和登录状态，发送回服务器处理。
-        </p>
-      </div>
-    </div>
-
-    <!-- 步骤 4：手动粘贴（备选方案） -->
-    <div class="step-card">
-      <div class="step-header">
-        <div class="step-number">4</div>
-        <div class="step-title">导入课表（手动方式）</div>
-      </div>
-      <div class="step-body">
-        <p style="margin-bottom: 16px; color: #666; font-size: 13px;">
-          如果控制台无法粘贴代码，可以用以下两种方式导入：
-        </p>
-
-        <!-- 方式 A：上传 HTML 文件 -->
-        <div style="margin-bottom: 20px;">
-          <h4 style="font-size:14px;margin-bottom:8px;">方式 A：上传保存的 HTML 文件</h4>
-          <p style="color: #999; font-size: 12px; margin-bottom: 10px;">
-            在课表页面按 <kbd>Ctrl+S</kbd> 保存网页为 HTML 文件，然后上传：
-          </p>
-          <input type="file" id="htmlFileInput" accept=".html,.htm,.mhtml,.mht" style="margin-bottom: 10px;">
-          <button class="btn btn-primary" onclick="uploadFile()">
-            📤 上传文件导入
-          </button>
-        </div>
-
-        <hr style="border: none; border-top: 1px solid #f0f0f0; margin: 16px 0;">
-
-        <!-- 方式 B：手动粘贴 HTML -->
-        <div>
-          <h4 style="font-size:14px;margin-bottom:8px;">方式 B：手动粘贴 HTML</h4>
-          <p style="color: #999; font-size: 12px; margin-bottom: 10px;">
-            在课表页面按 <kbd>F12</kbd>，在 Console 输入 <code>document.documentElement.outerHTML</code>，
-            复制输出结果粘贴到下方：
-          </p>
-          <div class="form-group">
-            <textarea id="htmlInput" rows="5" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:6px;font-family:monospace;font-size:12px;" placeholder="粘贴 document.documentElement.outerHTML 的输出结果..."></textarea>
-          </div>
-          <button class="btn btn-secondary" onclick="manualImport()">
-            📥 手动导入
-          </button>
         </div>
       </div>
-    </div>
 
-    <!-- 导入结果 -->
-    <div id="importResult" style="display:none">
-      <div class="step-card">
+      <!-- 步骤 3：获取抓取代码 -->
+      <div class="step-card" id="step3">
         <div class="step-header">
-          <div class="step-number" style="background:linear-gradient(135deg,#52c41a,#389e0d)">✓</div>
-          <div class="step-title">导入结果</div>
+          <div class="step-number">3</div>
+          <div class="step-title">复制下方代码，粘贴到教务系统页面的控制台</div>
         </div>
-        <div class="step-body" id="importResultBody">
+        <div class="step-body">
+          <p style="margin-bottom: 12px; color: #666; font-size: 13px;">
+            在教务系统课表页面按 <kbd>F12</kbd> 打开开发者工具，切换到 <strong>Console（控制台）</strong> 标签页，
+            粘贴下面的代码并按 <strong>Enter</strong> 执行。
+          </p>
+          <div class="code-box">
+            <button class="copy-btn" onclick="copySnippet()">复制代码</button>
+            <pre id="snippetCode">请先在步骤 1 填写信息，代码会自动生成...</pre>
+          </div>
+          <p style="margin-top: 12px; color: #999; font-size: 12px;">
+            代码会自动抓取当前页面的课表数据和登录状态，发送回服务器处理。
+          </p>
+        </div>
+      </div>
+
+      <!-- 步骤 4：手动粘贴（备选方案） -->
+      <div class="step-card" id="step4">
+        <div class="step-header">
+          <div class="step-number">4</div>
+          <div class="step-title">导入课表（手动方式）</div>
+        </div>
+        <div class="step-body">
+          <p style="margin-bottom: 16px; color: #666; font-size: 13px;">
+            如果控制台无法粘贴代码，可以用以下两种方式导入：
+          </p>
+
+          <!-- 方式 A：上传 HTML 文件 -->
+          <div style="margin-bottom: 20px;">
+            <h4 style="font-size:14px;margin-bottom:8px;">方式 A：上传保存的 HTML 文件</h4>
+            <p style="color: #999; font-size: 12px; margin-bottom: 10px;">
+              在课表页面按 <kbd>Ctrl+S</kbd> 保存网页为 HTML 文件，然后上传：
+            </p>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <input type="file" id="htmlFileInput" accept=".html,.htm,.mhtml,.mht" style="font-size: 13px;">
+              <button class="btn btn-primary" onclick="uploadFile()">
+                📤 上传文件导入
+              </button>
+            </div>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid var(--border-light); margin: 16px 0;">
+
+          <!-- 方式 B：手动粘贴 HTML -->
+          <div>
+            <h4 style="font-size:14px;margin-bottom:8px;">方式 B：手动粘贴 HTML</h4>
+            <p style="color: #999; font-size: 12px; margin-bottom: 10px;">
+              在课表页面按 <kbd>F12</kbd>，在 Console 输入 <code style="background:#f5f5f5;padding:2px 6px;border-radius:4px;font-size:12px;">document.documentElement.outerHTML</code>，
+              复制输出结果粘贴到下方：
+            </p>
+            <div class="form-group">
+              <textarea id="htmlInput" rows="5" style="width:100%;padding:10px;border:1px solid var(--border-color);border-radius:var(--radius-sm);font-family:'SF Mono', Monaco, monospace;font-size:12px;transition:border-color var(--transition),box-shadow var(--transition);resize:vertical;" placeholder="粘贴 document.documentElement.outerHTML 的输出结果..."></textarea>
+            </div>
+            <button class="btn btn-secondary" onclick="manualImport()">
+              📥 手动导入
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 导入结果 -->
+      <div id="importResult" style="display:none">
+        <div class="step-card done">
+          <div class="step-header">
+            <div class="step-number success">✓</div>
+            <div class="step-title">导入结果</div>
+          </div>
+          <div class="step-body" id="importResultBody">
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
+    // ========== 移动端侧边栏 ==========
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      const hamburger = document.getElementById('btnHamburger');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('show');
+      hamburger.classList.toggle('active');
+    }
+
+    async function logout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      } catch(e) {}
+      window.location.href = '/login.html';
+    }
+
     // ========== 初始化 ==========
 
     // 获取当前认证 token
@@ -657,6 +919,7 @@
 
         if (data.courses && data.courses.length > 0) {
           html += `
+            <div class="result-table-wrap">
             <table class="result-table">
               <thead>
                 <tr><th>日期</th><th>课程名称</th><th>教师</th><th>教室</th></tr>
@@ -672,6 +935,7 @@
                 `).join('')}
               </tbody>
             </table>
+            </div>
           `;
           if (data.courses.length > 20) {
             html += `<p style="margin-top:8px;color:#999;font-size:12px;">还有 ${data.courses.length - 20} 节课未显示...</p>`;
